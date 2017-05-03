@@ -24,7 +24,8 @@ SOURCES += \
     tst_future_2.cpp \
     tst_future_3.cpp \
     tst_concurrent.cpp \
-    tst_range.cpp
+    tst_range.cpp \
+    tst_unicode.cpp
 
 HEADERS += \
     tst_future.hpp
