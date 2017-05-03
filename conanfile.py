@@ -20,10 +20,12 @@ class B0UtilConan(ConanFile):
 
 
     def build(self):
-        self.run("qmake CONFIG+=no_test CONFIG+=release b0util.pro")
+        print(str(self.settings.build_type).lower())
+        self.run("qmake CONFIG+=no_test CONFIG+=%s b0util.pro" % str(self.settings.build_type).lower())
         if self.settings.os == "Windows":
             vcvars = tools.vcvars_command(self.settings)
             make = "jom -j%d" % tools.cpu_count()
+            self.run("jom qmake_all")
             self.run("%s && %s" % (vcvars, make))
         #cmake = CMake(self.settings)
         #flags = "-DBUILD_SHARED_LIBS=TRUE -DFMT_TEST=FALSE -DFMT_INSTALL=TRUE -DFMT_DOCS=FALSE"
