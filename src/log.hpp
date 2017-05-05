@@ -63,7 +63,7 @@ private:
 
 inline auto set_default_logger(const logger &logger) -> void { b0::logger::set_default(logger); }
 
-inline auto default_logger() -> logger { b0::logger::default_(); }
+inline auto default_logger() -> logger { return b0::logger::default_(); }
 
 template<class... Args>
 inline auto info(const char *fmt, Args&&... args) -> void
