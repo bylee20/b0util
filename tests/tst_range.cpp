@@ -51,4 +51,17 @@ TEST_CASE("range") {
         v | filter([] (auto &&v) { return v % 2 == 0; }) | for_each([] (auto &v) { v += 10; });
         REQUIRE(v == (std::vector<int>{10, 1, 12, 3, 14}));
     }
+
+    SECTION("min/max/find_min/find_max") {
+        std::vector<double> vec;
+        CAPTURE(vec);
+        REQUIRE((vec | find_min()) == vec.end());
+        REQUIRE((vec | find_max()) == vec.end());
+        vec = {1.0, 5.0, 2.0, 0.0};
+        CAPTURE(vec);
+        REQUIRE(*(vec | find_min()) == 0.0);
+        REQUIRE(*(vec | find_max()) == 5.0);
+        REQUIRE((vec | min()) == 0.0);
+        REQUIRE((vec | max()) == 5.0);
+    }
 }

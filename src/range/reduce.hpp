@@ -88,8 +88,30 @@ inline auto sum() -> auto
 { return reduce([] (auto &acc, auto &&v) { acc += std::forward<decltype(v)>(v); }); }
 
 template<run_policy p>
-inline auto sum(run_policy_t<p>) -> auto
+constexpr inline auto sum(run_policy_t<p>) -> auto
 { return reduce(run_policy_t<p>(), [] (auto &acc, auto &&v) { acc += std::forward<decltype(v)>(v); }); }
+
+template<class LessThan>
+inline auto max(LessThan &&lt) -> auto
+{
+    return reduce([lt=std::forward<LessThan>(lt)] (auto &acc, auto &&v) {
+        if (lt(acc, v))
+            acc = std::forward<decltype(v)>(v);
+    });
+}
+
+inline auto max() -> auto { return max(std::less<>()); }
+
+template<class LessThan>
+inline auto min(LessThan &&lt) -> auto
+{
+    return reduce([lt=std::forward<LessThan>(lt)] (auto &acc, auto &&v) {
+        if (lt(v, acc))
+            acc = std::forward<decltype(v)>(v);
+    });
+}
+
+inline auto min() -> auto { return min(std::less<>()); }
 
 }
 
