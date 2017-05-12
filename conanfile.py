@@ -1,18 +1,19 @@
 from conans import ConanFile, tools
 
 class B0UtilConan(ConanFile):
-    name = "b0util"
-    version = "0.0.1"
+    name    = "b0util"
+    url     = "http://github.com/xylosper/b0util"
+    version = "latest"
+    license = "private" 
     settings = "os", "compiler", "build_type", "arch"
-    url = "http://github.com/xylosper/b0util"
-    license = "private"
     generators = "qmake"
+    build_policy = "missing"
     exports_sources = "*.pro", "*.pri", "src/*"
     
     def requirements(self):
-        self.requires("catch/1.8.2@xylosper/stable")
-        self.requires("spdlog/0.12.0@xylosper/stable")
-        self.requires("fmt/3.0.1@xylosper/stable")
+        self.requires("catch/latest@xylosper/stable")
+        self.requires("spdlog/latest@xylosper/stable")
+        self.requires("fmt/latest@xylosper/stable")
 
     #def imports(self):
         #self.copy("*.dll", dst="bin", src="bin") # From bin to bin
