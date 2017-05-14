@@ -74,7 +74,7 @@ template<class Seq, int I, bool = (I < Seq::size && 1 > 0)>
 struct exclusive_type
 {
     static constexpr bool value
-        = count_type_v<Seq, Seq::template get<I>> == 1
+        = count_type_v<Seq, typename Seq::template get<I>> == 1
         && exclusive_type<Seq, I + 1>::value;
 };
 
@@ -89,22 +89,24 @@ struct exclusive_type<Seq, I, false>
 template<class... Args>
 struct type_seq
 {
+    template<int N>
+    using get = variadic_type_at_t<N, Args...>;
+    template<int... Ints>
+    using extract = type_seq<type_seq::get<Ints>...>;
 private:
     template<class... _Args>
     friend struct type_seq;
     template<int... Ints>
-    static constexpr auto _extract_by_seq(int_seq<Ints...>) -> auto { return extract<Ints...>(); }
+    static constexpr auto _extract_by_seq(int_seq<Ints...>) -> extract<Ints...>;
     template<class... _Args>
     static constexpr auto _skip(type_seq<Args..., _Args...>) -> type_seq<_Args...>;
 public:
-    template<int N>
-    using get = variadic_type_at_t<N, Args...>;
+
     template<class T>
     static constexpr int index = variadic_type_index_v<T, Args...>;
     static constexpr int size = sizeof...(Args);
 
-    template<int... Ints>
-    using extract = type_seq<get<Ints>...>;
+
     template<class IntSeq>
     using extract_by_seq = decltype(_extract_by_seq(IntSeq()));
     template<int N>
@@ -146,7 +148,7 @@ struct size<type_seq<Args...>> {
 };
 
 template<class T, class Seq>
-constexpr int type_index_v = Seq::index<T>;
+constexpr int type_index_v = Seq::template index<T>;
 
 template<class T, class... Args>
 struct pop_front<type_seq<T, Args...>> {

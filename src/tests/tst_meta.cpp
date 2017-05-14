@@ -1,8 +1,8 @@
 #include <catch.hpp>
 #include <iostream>
-#include "../src/meta/meta.hpp"
-#include "../src/meta/type_seq.hpp"
-#include "../src/meta/callable.hpp"
+#include <b0util/meta/meta.hpp>
+#include <b0util/meta/type_seq.hpp>
+#include <b0util/meta/callable.hpp>
 #include <QString>
 #include <QStringBuilder>
 

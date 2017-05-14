@@ -6,7 +6,7 @@
 #define META_ASSERT(...) \
     static_assert(__VA_ARGS__, "falsy expr: " #__VA_ARGS__)
 
-#define B0_REQ(...) class = b0::meta::req_t<__VA_ARGS__>
+#define B0_REQ(...) class = typename std::enable_if<__VA_ARGS__>::type
 #define B0_REQ_OP(...) b0::meta::req_t<__VA_ARGS__, b0::meta::__b0_req_t> = b0::meta::__b0_req_t_value // optional parameter
 #define B0_USING_REQ_T template<bool cond, class T = void> using req_t = b0::meta::req_t<cond, T>
 #define B0_USING_EQ_V template<class T, class V> static constexpr bool eq_v = b0::meta::eq_v<T, V>

@@ -1,7 +1,7 @@
 #include <catch.hpp>
-#include "../src/symbol/symbol.hpp"
-#include "../src/symbol/object.hpp"
-#include "../src/symbol/factory.hpp"
+#include <b0util/symbol/symbol.hpp>
+#include <b0util/symbol/object.hpp>
+#include <b0util/symbol/factory.hpp>
 
 b0_define_symbol(name)
 b0_define_symbol(value)

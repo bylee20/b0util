@@ -16,6 +16,12 @@
 #   define B0_OS B0_OS_WIN
 #endif
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#define B0_DEP_TMP
+#else
+#define B0_DEP_TMP template
+#endif
+
 #ifdef _MSC_VER
 #   define B0_DECL_EXPORT __declspec(dllexport)
 #   define B0_DECL_IMPORT __declspec(dllimport)

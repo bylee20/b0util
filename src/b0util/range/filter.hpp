@@ -40,8 +40,8 @@ struct filter_iterable<T, Fn, Iterable, true> : range_fn_iterable<T, Iterable>
 protected:
     auto check() -> void
     {
-        while (!at_end()) {
-            if (m_fn(get()))
+        while (!super::at_end()) {
+            if (m_fn(super::get()))
                 break;
             super::next();
         }
@@ -59,8 +59,8 @@ struct filter_fn {
             std::is_reference_v<decltype(std::declval<Iterable>().get())> >;
         template<class It, class F>
         constexpr iterable(It &&it, F &&f)
-            : super(std::forward<It>(it), std::forward<F>(f)) { check(); }
-        auto next() -> void { super::next(); check(); }
+            : super(std::forward<It>(it), std::forward<F>(f)) { super::check(); }
+        auto next() -> void { super::next(); super::check(); }
     };
 
     template<class F>

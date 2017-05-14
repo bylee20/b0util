@@ -33,7 +33,7 @@ struct range_fn_iterable : b0::range::iterable {
     constexpr auto get() const -> decltype(auto) { return m_it.get(); }
     auto next() -> void { m_it.next(); }
     constexpr auto size_hint() const -> auto { return m_it.size_hint(); }
-    template<B0_REQ(meta::has_size<Iterable>::value)>
+//    template<B0_REQ(meta::has_size<Iterable>::value)>
     constexpr auto size() const -> decltype(std::size(std::declval<Iterable>()))
     { return std::size(m_it); }
 

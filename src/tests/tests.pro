@@ -1,5 +1,5 @@
 TEMPLATE = app
-include(../configure.pri)
+include(../common.pri)
 
 TARGET = tests
 

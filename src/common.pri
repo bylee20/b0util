@@ -1,15 +1,17 @@
 CONFIG += conan_basic_setup
-include(conanbuildinfo.pri)
-
-BIN_DIR = $$PWD/build/bin
-LIB_DIR = $$PWD/build/lib
-
-INCLUDEPATH += $$PWD
-LIBS        += -L$$LIB_DIR
+include(../conanbuildinfo.pri)
 
 CONFIG(debug, debug|release) {
     DEBUG_BUILD = true
+    BIN_DIR = $$PWD/../build/debug/bin
+    LIB_DIR = $$PWD/../build/debug/lib
+} else {
+    BIN_DIR = $$PWD/../build/release/bin
+    LIB_DIR = $$PWD/../build/release/lib
 }
+
+INCLUDEPATH += $$PWD
+LIBS        += -L$$LIB_DIR
 
 equals(TEMPLATE, lib) {
     DESTDIR     = $$LIB_DIR

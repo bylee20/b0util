@@ -1,5 +1,5 @@
 #include <catch.hpp>
-#include <fp.hpp>
+#include <b0util/fp.hpp>
 
 TEST_CASE("fp") {
     int a = 10;

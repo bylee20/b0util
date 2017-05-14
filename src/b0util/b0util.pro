@@ -1,5 +1,5 @@
 TEMPLATE = lib
-include(../configure.pri)
+include(../common.pri)
 
 TARGET = b0util
 

@@ -92,6 +92,9 @@ private:
     FnTuple m_fnTuple;
 };
 
+template<class Tuple, bool t>
+struct pipe_fn;
+
 template<class FnTuple>
 struct pipe_fn<FnTuple, false> : pipe_fn_base<pipe_fn<FnTuple, false>, FnTuple, false> {
     using super = pipe_fn_base<pipe_fn<FnTuple, false>, FnTuple, false>;
@@ -108,22 +111,22 @@ struct pipe_fn<FnTuple, false> : pipe_fn_base<pipe_fn<FnTuple, false>, FnTuple, 
     template<class Tuple, bool t>
     constexpr auto operator | (const pipe_fn<Tuple, t> &rhs) const&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(tuple(), rhs.m_fnTuple) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), rhs.m_fnTuple) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (const pipe_fn<Tuple, t> &rhs) &&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(tuple(), rhs.m_fnTuple) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), rhs.m_fnTuple) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (pipe_fn<Tuple, t> &&rhs) const&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(tuple(), std::move(rhs.m_fnTuple)) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.m_fnTuple)) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (pipe_fn<Tuple, t> &&rhs) &&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(tuple(), std::move(rhs.m_fnTuple)) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.m_fnTuple)) }; }
 private:
     template<class Tuple, bool t>
     friend struct pipe_fn;
@@ -191,7 +194,8 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
 
     template<class Range>
     constexpr auto operator () (Range &&range) const -> auto
-    { return apply(std::forward<Range>(range), typename std::tuple_element_t<size() - 1, FnTuple>::run_policy()); }
+    { return apply(std::forward<Range>(range),
+                   typename std::tuple_element_t<this->size() - 1, FnTuple>::run_policy()); }
 #pragma warning(pop)
 private:
 
