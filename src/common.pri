@@ -20,4 +20,4 @@ equals(TEMPLATE, lib) {
     DESTDIR     = $$BIN_DIR
 }
 
-QMAKE_CXXFLAGS += /wd4814
+QMAKE_CXXFLAGS += /wd4814 -Xclang -std=c++1z

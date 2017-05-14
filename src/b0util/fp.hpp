@@ -41,8 +41,8 @@ inline constexpr auto invoke_overflow_impl(meta::bool_<false>, F &&f, Args&&... 
 template<class F, class... Args>
 inline constexpr auto invoke_overflow(F &&f, Args&&... args) -> decltype(auto)
 {
-    META_ASSERT(meta::is_invokable_overflow_v<decltype(f), decltype(args)...>);
-    return b0::detail::invoke_overflow_impl(meta::is_invokable<decltype(f), decltype(args)...>(),
+    META_ASSERT(meta::is_invokable_overflow_v<F&&, Args&&...>);
+    return b0::detail::invoke_overflow_impl(meta::is_invokable<F&&, Args&&...>(),
                                             std::forward<F>(f), std::forward<Args>(args)...);
 }
 

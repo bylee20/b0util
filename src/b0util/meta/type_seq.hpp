@@ -86,21 +86,30 @@ struct exclusive_type<Seq, I, false>
 
 }
 
+template<class Seq>
+using is_type_seq_exclusive = bool_<detail::exclusive_type<Seq, 0>::value>;
+
+template<class Seq>
+static constexpr bool is_type_seq_exclusive_v = is_type_seq_exclusive<Seq>::value;
+
+template<class... Args>
+struct type_seq;
+
 template<class... Args>
 struct type_seq
 {
+    template<class... Ts>
+    friend struct type_seq;
     template<int N>
     using get = variadic_type_at_t<N, Args...>;
     template<int... Ints>
-    using extract = type_seq<type_seq::get<Ints>...>;
-private:
+    using extract = type_seq<type_seq::template get<Ints>...>;
     template<class... _Args>
     friend struct type_seq;
     template<int... Ints>
-    static constexpr auto _extract_by_seq(int_seq<Ints...>) -> extract<Ints...>;
+    static constexpr auto _extract_by_seq(int_seq<Ints...>) -> auto { return extract<Ints...>(); }
     template<class... _Args>
     static constexpr auto _skip(type_seq<Args..., _Args...>) -> type_seq<_Args...>;
-public:
 
     template<class T>
     static constexpr int index = variadic_type_index_v<T, Args...>;
@@ -112,7 +121,7 @@ public:
     template<int N>
     using slice_front = extract_by_seq<make_int_seq<N>>;
     template<int N>
-    using slice_back = decltype(slice_front<size - N>::_skip(type_seq()));
+    using slice_back = decltype(slice_front<size - N>::_skip(std::declval<type_seq<Args...>>()));
     template<int Begin, int End = size>
     using slice = typename slice_back<size - Begin>::template slice_front<End - Begin>;
 
@@ -135,6 +144,8 @@ public:
     }
 
     static constexpr bool exclusive = detail::exclusive_type<type_seq, 0>::value;
+private:
+
 };
 
 template<int n, class... Args>
@@ -148,7 +159,7 @@ struct size<type_seq<Args...>> {
 };
 
 template<class T, class Seq>
-constexpr int type_index_v = Seq::template index<T>;
+constexpr int type_index_v = Seq::B0_DEP_TMP index<T>;
 
 template<class T, class... Args>
 struct pop_front<type_seq<T, Args...>> {

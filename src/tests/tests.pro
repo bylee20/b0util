@@ -10,10 +10,8 @@ LIBS += -lb0util
 INCLUDEPATH += ../src
 
 SOURCES += \
-    tst_rho.cpp \
     tst_symbol.cpp \
     tst_jsonio.cpp \
-    tst_algorithm.cpp \
     main.cpp \
     tst_meta.cpp \
     tst_optional.cpp \
@@ -23,7 +21,6 @@ SOURCES += \
     tst_future_1.cpp \
     tst_future_2.cpp \
     tst_future_3.cpp \
-    tst_concurrent.cpp \
     tst_range.cpp \
     tst_unicode.cpp
 

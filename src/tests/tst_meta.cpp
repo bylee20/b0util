@@ -3,6 +3,7 @@
 #include <b0util/meta/meta.hpp>
 #include <b0util/meta/type_seq.hpp>
 #include <b0util/meta/callable.hpp>
+#include <b0util/meta/container.hpp>
 #include <QString>
 #include <QStringBuilder>
 
@@ -70,6 +71,9 @@ TEST_CASE("b0::meta") {
     META_ASSERT(eq_v<slice_t<3, 4, type_seq<int, double, char, float, short, long>>, type_seq<float>>);
     META_ASSERT(eq_v<slice_t<1, 4, type_seq<int, double, char, float, short, long>>, type_seq<double, char, float>>);
     META_ASSERT(eq_v<slice_t<0, 5, type_seq<int, double, char, float, short, long>>, type_seq<int, double, char, float, short>>);
+
+    META_ASSERT(has_size<std::vector<int>>::value);
+    META_ASSERT(!has_size<int>::value);
 
 //    int a = 0;
 //    auto lambda2 = [&] (int x, int y) { return a + x + y; };

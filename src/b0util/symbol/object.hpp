@@ -35,7 +35,7 @@ constexpr inline auto compare(const object<Holders...> &, const object<_Holders.
 template<class... Holders>
 struct object : Holders...
 {
-    META_ASSERT(meta::type_seq<Holders...>::exclusive);
+    META_ASSERT(meta::is_type_seq_exclusive_v<meta::type_seq<Holders...>>);
     META_ASSERT(meta::count_type_if_v<meta::type_seq<Holders...>, is_holder> == sizeof...(Holders));
 
     template<class... Args>

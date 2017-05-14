@@ -13,7 +13,7 @@ class is_invokable_impl {
 #pragma warning(push)
 #pragma warning(disable: 4100)
     template<class _F, class... _Args> static auto test(int)
-    -> decltype((void)std::declval<F>()(std::declval<Args>()...), std::true_type{});
+    -> decltype((void)std::declval<_F>()(std::declval<_Args>()...), std::true_type{});
 #pragma warning(pop)
     template<class _F, class... _Args> static auto test(...) -> std::false_type;
 public:
@@ -23,7 +23,7 @@ public:
 template<class F, class... Args>
 class is_invokable_overflow_impl {
     template<class _F, class... _Args> static auto test(int)
-    -> decltype(b0::meta::detail::invoke_overflow_impl(std::declval<F>(), std::declval<Args>()...), std::true_type{});
+    -> decltype(b0::meta::detail::invoke_overflow_impl(std::declval<_F>(), std::declval<_Args>()...), std::true_type{});
     template<class _F, class... _Args> static auto test(...) -> std::false_type;
 public:
     static constexpr bool value = decltype(test<F, Args...>(0))::value;

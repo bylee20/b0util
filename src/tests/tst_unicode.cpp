@@ -1,5 +1,5 @@
 #include <catch.hpp>
-#include <unicode.hpp>
+#include <b0util/unicode.hpp>
 
 TEST_CASE("unicode") {
     REQUIRE(b0::to_utf8(L"abc", 3) == "abc");

@@ -9,11 +9,13 @@ TEST_CASE("fp") {
     auto vlambda = [&] () {};
 
     REQUIRE((b0::invoke(lambda, 2, 3) == 16));
+//    b0::meta::detail::invoke_overflow_impl(lambda, 2, 3, 4);
     REQUIRE((b0::invoke_overflow(lambda, 2, 3, 4) == 16));
 
     using namespace b0::meta;
 
     META_ASSERT(is_invokable<decltype(lambda), int, int>::value);
+    META_ASSERT(!is_invokable_overflow_v<decltype(lambda), int>);
 
     META_ASSERT(b0::meta::eq_v<void, b0::meta::invoke<decltype(vlambda)>::type>);
 }

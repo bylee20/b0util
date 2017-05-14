@@ -1,5 +1,5 @@
 #include <catch.hpp>
-#include "optional.hpp"
+#include <b0util/optional.hpp>
 
 
 TEST_CASE("Optional") {

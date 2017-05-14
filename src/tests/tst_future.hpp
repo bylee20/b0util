@@ -1,7 +1,7 @@
 #pragma once
 
 #include <catch.hpp>
-#include <future.hpp>
+#include <b0util/future.hpp>
 #include <future>
 #include <chrono>
 
@@ -64,8 +64,8 @@ auto testRejected(const E &e, F &&func) -> void
 };
 
 template<class T>
-static auto to_string(T &&t) -> std::string { return std::to_string(std::forward<T>(t)); }
-static auto to_string(const std::string &s) -> std::string { return s; }
+static inline auto to_string(T &&t) -> std::string { return std::to_string(std::forward<T>(t)); }
+static inline auto to_string(const std::string &s) -> std::string { return s; }
 
 template<class E>
 static auto testReason(const E &e) {

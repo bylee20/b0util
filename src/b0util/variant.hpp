@@ -24,11 +24,11 @@ public:
     variant() { ctor(type_seq::get<0>()); }
 
     variant(const variant &other) = default;
-
     variant(variant &&other) = default;
+    variant(variant &other) = default;
 
     template<class U, int I = holdable_index<U>, B0_REQ(I != -1)>
-    variant(U &&other) { emplace<type_seq::get<I>>(std::forward<U>(other)); }
+    variant(U &&other) { emplace<type_seq::template get<I>>(std::forward<U>(other)); }
 
     template<class T, class... Args, B0_REQ(holdable_index<T> != -1)>
     variant(b0::in_place_type_t<T>, Args&&... args)
@@ -45,7 +45,7 @@ public:
     template<class U, int I = holdable_index<U>, B0_REQ(I != -1)>
     auto operator = (U &&rhs) -> variant&
     {
-        emplace<type_seq::get<I>>(std::forward<U>(rhs));
+        emplace<type_seq::template get<I>>(std::forward<U>(rhs));
         return *this;
     }
 

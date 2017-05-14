@@ -33,6 +33,7 @@ struct sized_iterator_iterable : iterator_iterable<Begin, End> {
     constexpr sized_iterator_iterable(B &&begin, E &&end, std::size_t size)
         : iterator_iterable<Begin, End>(std::forward<B>(begin), std::forward<E>(end)), m_size(size) {}
     constexpr auto size_hint() const -> std::size_t { return m_size; }
+    constexpr auto size() const -> std::size_t { return m_size; }
 private:
     std::size_t m_size;
 };
