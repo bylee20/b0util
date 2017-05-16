@@ -109,20 +109,20 @@ class optional : public detail::option_storage<T> {
 public:
     constexpr optional() { }
     constexpr optional(nullopt_t) { }
-    constexpr optional(optional &&other) { assign(std::move(other)); }
-    constexpr optional(const optional &other) { assign(other); }
+    constexpr optional(optional &&other) { this->assign(std::move(other)); }
+    constexpr optional(const optional &other) { this->assign(other); }
     template<class... Args>
     constexpr optional(in_place_t, Args&&... args)
         : base_t(std::forward<Args>(args)...) { }
     template<class U, B0_REQ(!eq_v<std::decay_t<U>, optional>)>
     constexpr optional(U &&u): base_t(std::forward<U>(u)) { }
-    auto operator = (nullopt_t) -> optional& { reset(); return *this; }
+    auto operator = (nullopt_t) -> optional& { this->reset(); return *this; }
     auto operator = (optional &&rhs) -> optional&
-    { assign(std::move(rhs)); return *this; }
+    { this->assign(std::move(rhs)); return *this; }
     auto operator = (const optional &rhs) -> optional&
     {
         if (this != &rhs)
-            assign(rhs);
+            this->assign(rhs);
         return *this;
     }
 ////    template<class U = T>

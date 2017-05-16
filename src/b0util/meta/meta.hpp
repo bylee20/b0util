@@ -32,9 +32,17 @@
 
 #define B0_DECLARE_HAS_MEMBER(mem) B0_DECLARE_HAS_MEMBER_WITH_NAME(has_ ## mem, mem)
 
-
+#define B0_NOEXCEPT_IF(expr) noexcept(noexcept(expr))
+#define B0_NOEXCEPT_RETURN(expr, ret) B0_NOEXCEPT_IF(expr) -> ret
+#define B0_NOEXCEPT_RETURN_DECLTYPE(expr) noexcept(noexcept(expr)) -> decltype(expr)
+#define B0_RETURN_BODY(expr) B0_NOEXCEPT_RETURN_DECLTYPE(expr) { return expr; }
 
 namespace b0 { namespace meta {
+
+template<bool B>
+using bool_ = std::integral_constant<bool, B>;
+using true_ = bool_<true>;
+using false_ = bool_<false>;
 
 enum __b0_req_t { __b0_req_t_value };
 
@@ -88,6 +96,15 @@ constexpr bool is_lref_v = is_lref<T>::value;
 template<class T>
 constexpr bool is_ref_v = is_ref<T>::value;
 
+template <class T>
+struct is_ref_wrapper : false_ {};
+template <class U>
+struct is_ref_wrapper<std::reference_wrapper<U>> : true_ {};
+
+template <class T>
+constexpr bool is_ref_wrapper_v = is_ref_wrapper<T>::value;
+
+
 template<class T, class S>
 using eq = std::is_same<T, S>;
 
@@ -99,11 +116,6 @@ struct wrap_type { using type = T; };
 
 template<int I>
 using int_ = std::integral_constant<int, I>;
-
-template<bool B>
-using bool_ = std::integral_constant<bool, B>;
-using true_ = bool_<true>;
-using false_ = bool_<false>;
 
 template<class T>
 struct wrap_void : meta::wrap_type<T> {};
