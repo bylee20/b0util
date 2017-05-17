@@ -88,8 +88,42 @@ template<class LessThan>
 constexpr inline auto find_min(LessThan &&lt) -> auto
 { return make_pipe(find_min_fn<std::decay_t<LessThan>>(in_place, std::forward<LessThan>(lt))); }
 
-
 constexpr inline auto find_max() -> auto { return find_max(std::less<>()); }
 constexpr inline auto find_min() -> auto { return find_min(std::less<>()); }
+
+template<class Fn>
+struct find_minmax_fn : terminal_fn {
+    template<class F>
+    constexpr find_minmax_fn(in_place_t, F &&fn): m_lt(std::forward<F>(fn)) {}
+
+    template<class Iterable>
+    auto run(Iterable &&it) const -> auto
+    {
+        auto pos = it.iterator();
+        auto pair = std::make_pair(pos, pos);
+        if (!it.at_end()) {
+            auto min = it.get(), max = min;
+            for (it.next(); !it.at_end(); it.next()) {
+                auto tmp = it.get();
+                if (m_lt(tmp, min)) {
+                    min = std::move(tmp);
+                    pair.first = it.iterator();
+                } else if (m_lt(max, tmp)) {
+                    max = std::move(tmp);
+                    pair.second = it.iterator();
+                }
+            }
+        }
+        return pair;
+    }
+private:
+    Fn m_lt;
+};
+
+template<class LessThan>
+constexpr inline auto find_minmax(LessThan &&lt) -> auto
+{ return make_pipe(find_minmax_fn<std::decay_t<LessThan>>(in_place, std::forward<LessThan>(lt))); }
+
+constexpr inline auto find_minmax() -> auto { return find_minmax(std::less<>()); }
 
 }}

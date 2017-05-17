@@ -1,12 +1,4 @@
-#include <b0util/range/map.hpp>
-#include <b0util/range/filter.hpp>
-#include <b0util/range/limit.hpp>
-#include <b0util/range/counter.hpp>
-#include <b0util/range/to.hpp>
-#include <b0util/range/count.hpp>
-#include <b0util/range/reduce.hpp>
-#include <b0util/range/find.hpp>
-#include <b0util/range/for_each.hpp>
+#include <b0util/range/algorithm.hpp>
 #include <deque>
 #include <list>
 #include <catch.hpp>
@@ -14,6 +6,17 @@
 TEST_CASE("range") {
     using namespace b0::range;
     using namespace std::chrono_literals;
+
+    SECTION("flatten") {
+        auto vvec = counter(0) | limit(3) | map([] (auto v) { return repeat(v, v) | to<std::vector>(); }) | to<std::vector>();
+        CAPTURE(vvec);
+        REQUIRE(vvec == (std::vector<std::vector<int>>{{}, {1}, {2, 2}}));
+        auto vec = vvec | flatten() | map([] (auto v) { return v + 1; }) | to<std::vector>();
+        REQUIRE(vec == (std::vector<int>{2, 3, 3}));
+        vec = counter(0) | limit(3) | map([] (auto v) { return repeat(v, v) | to<std::vector>(); })
+                | flatten() | map([] (auto v) { return v + 1; }) | to<std::vector>();
+        REQUIRE(vec == (std::vector<int>{2, 3, 3}));
+    }
 
     SECTION("counter/limit/to/filter/count/count_if") {
         std::vector<int> v1 = counter(0, 2) | limit(10) | to<std::vector>();
@@ -31,6 +34,11 @@ TEST_CASE("range") {
                 | reduce(0, [] (auto &&acc, auto v) { acc += v; });
         REQUIRE(r1 == r2);
         REQUIRE(r1 == 285);
+
+        std::vector<double> vec = {1.0, 5.0, 2.0, 0.0};
+        REQUIRE((vec | max()) == 5.0);
+        REQUIRE((vec | min()) == 0.0);
+        REQUIRE((vec | minmax()) == std::make_pair(0.0, 5.0));
     }
 
     SECTION("find/find_if") {
@@ -52,6 +60,7 @@ TEST_CASE("range") {
         REQUIRE(v == (std::vector<int>{10, 1, 12, 3, 14}));
     }
 
+
     SECTION("min/max/find_min/find_max") {
         std::vector<double> vec;
         CAPTURE(vec);
@@ -63,5 +72,10 @@ TEST_CASE("range") {
         REQUIRE(*(vec | find_max()) == 5.0);
         REQUIRE((vec | min()) == 0.0);
         REQUIRE((vec | max()) == 5.0);
+        auto minmax = vec | find_minmax();
+        REQUIRE(*minmax.first == 0.0);
+        REQUIRE(*minmax.second == 5.0);
+        REQUIRE(std::distance(vec.begin(), minmax.first) == 3);
+        REQUIRE(std::distance(vec.begin(), minmax.second) == 1);
     }
 }

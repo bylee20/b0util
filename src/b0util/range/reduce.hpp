@@ -12,7 +12,7 @@ struct reduce_fn_base : terminal_fn {
 
     template<class F>
     constexpr reduce_fn_base(in_place_t, F &&fn)
-        : m_fn(std::forward<Fn>(fn)) {}
+        : m_fn(std::forward<F>(fn)) {}
     template<class Iterable>
     auto run(Iterable &&it) const -> auto
     {
@@ -41,7 +41,7 @@ struct reduce_fn : reduce_fn_base<reduce_fn<Policy, Fn, Init>, Policy, Fn> {
     using super = reduce_fn_base<reduce_fn<Policy, Fn, Init>, Policy, Fn>;
     template<class F, class I>
     constexpr reduce_fn(in_place_t, F &&fn, I &&init)
-        : super(in_place, std::forward<Fn>(fn))
+        : super(in_place, std::forward<F>(fn))
         , m_init(std::forward<I>(init)) {}
 
     template<class Iterable>
@@ -56,7 +56,7 @@ struct reduce_fn<Policy, Fn, void>
     using super = reduce_fn_base<reduce_fn<Policy, Fn, void>, Policy, Fn>;
     template<class F>
     constexpr reduce_fn(in_place_t, F &&fn)
-        : super(in_place, std::forward<Fn>(fn)) {}
+        : super(in_place, std::forward<F>(fn)) {}
     template<class Iterable>
     auto get_init(Iterable &&it) const -> std::decay_t<decltype(it.get())>
     {
@@ -112,6 +112,62 @@ inline auto min(LessThan &&lt) -> auto
 }
 
 inline auto min() -> auto { return min(std::less<>()); }
+
+template<class Policy, class LessThan>
+struct minmax_fn : terminal_fn {
+    using run_policy = Policy;
+
+    template<class F>
+    constexpr minmax_fn(in_place_t, F &&fn)
+        : m_lt(std::forward<F>(fn)) {}
+    template<class Iterable>
+    auto run(Iterable &&it) const -> auto
+    {
+        using T = typename std::decay_t<Iterable>::value_type;
+        if (it.at_end())
+            return std::pair<T, T>();
+        auto tmp = it.get();
+        std::pair<T, T> pair(tmp, tmp);
+        for (it.next(); !it.at_end(); it.next()) {
+            auto tmp = it.get();
+            if (m_lt(tmp, pair.first))
+                pair.first = tmp;
+            else if (m_lt(pair.second, tmp))
+                pair.second = tmp;
+        }
+        return pair;
+    }
+    template<class T>
+    auto parallel(std::vector<std::pair<T, T>> &&values) const -> std::pair<T, T>
+    {
+        if (values.empty())
+            return {};
+        auto it = values.begin();
+        auto pair = std::move(*it);
+        for (++it; it != values.end(); ++it) {
+            if (m_lt(it->first, pair.first))
+                pair.first = it->first;
+            else if (m_lt(pair.second, it->second))
+                pair.second = it->second;
+        }
+        return pair;
+    }
+protected:
+    LessThan m_lt;
+};
+
+template<class LessThan>
+constexpr inline auto minmax(LessThan &&lt) -> auto
+{ return make_pipe(minmax_fn<run_seq_t, std::decay_t<LessThan>>(in_place, std::forward<LessThan>(lt))); }
+
+template<class LessThan, run_policy p>
+constexpr inline auto minmax(run_policy_t<p>, LessThan &&fn) -> auto
+{ return make_pipe(minmax_fn<run_policy_t<p>, std::decay_t<LessThan>>(in_place, std::forward<LessThan>(fn))); }
+
+constexpr inline auto minmax() -> auto { return minmax(std::less<>()); }
+
+template<run_policy p>
+constexpr inline auto minmax(run_policy_t<p>) -> auto { return minmax(run_policy_t<p>(), std::less<>()); }
 
 }
 
