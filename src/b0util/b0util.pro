@@ -62,4 +62,5 @@ HEADERS +=\
     unicode.hpp \
     global.hpp \
     path.hpp \
-    range/flatten.hpp
+    range/flatten.hpp \
+    variadic.hpp
