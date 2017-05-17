@@ -1,4 +1,5 @@
 from conans import ConanFile, tools
+import os
 
 class B0UtilConan(ConanFile):
     name    = "b0util"
@@ -8,7 +9,7 @@ class B0UtilConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "qmake"
     build_policy = "missing"
-    exports_sources = "*.pro", "*.pri", "src/*"
+    exports_sources = "*.pro", "src/*"
     
     def requirements(self):
         self.requires("catch/latest@xylosper/stable")
@@ -22,6 +23,7 @@ class B0UtilConan(ConanFile):
 
     def build(self):
         print(str(self.settings.build_type).lower())
+        os.chdir("src")
         self.run("qmake CONFIG+=no_test CONFIG+=%s b0util.pro" % str(self.settings.build_type).lower())
         if self.settings.os == "Windows":
             vcvars = tools.vcvars_command(self.settings)
