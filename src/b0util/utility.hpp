@@ -43,4 +43,6 @@ template<class T, class U>
 inline constexpr auto forward_like(meta::unref_t<T>&, U &u)
 -> meta::req_t<meta::is_lref_v<T&&>, U&> { return u; }
 
+enum class thread_safety { unsafe, safe };
+
 }

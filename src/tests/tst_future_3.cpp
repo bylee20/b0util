@@ -1,6 +1,15 @@
 #include <tst_future.hpp>
 
 TEST_CASE("promise_3") {
+    {
+        b0::promise_unsafe<int> promise;
+        auto future = promise.future();
+        int value = 0;
+        future.then([&value] (int v) { value = v; });
+        promise.resolve(10);
+        REQUIRE(value == 10);
+    }
+
     SECTION("2.2.6: `then` may be called multiple times on the same promise.") {
         SECTION("2.2.6.1: If/when `promise` is fulfilled, "
                 "all respective `onFulfilled` callbacks must execute "

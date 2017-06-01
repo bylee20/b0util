@@ -17,13 +17,13 @@ class thread_pool : uncopyable
     template<class F, class R, class... Args>
     struct job_impl_t : job_t {
         template<class _F, class... _Args>
-        job_impl_t(b0::promise<R> promise, _F &&func, _Args&&... args)
+        job_impl_t(b0::promise_safe<R> promise, _F &&func, _Args&&... args)
             : promise(std::move(promise)), func(std::forward<_F>(func))
             , args(std::forward<_Args>(args)...) { }
         auto invoke() -> void override
         { promise.apply_and_settle(std::move(func), std::move(args)); }
     private:
-        b0::promise<R> promise; F func;
+        b0::promise_safe<R> promise; F func;
         std::tuple<Args...> args;
     };
 public:
@@ -36,7 +36,7 @@ public:
     auto size() const -> int;
     template<class F, class... Args>
     auto start(F &&func, Args&&... args)
-    -> future<std::decay_t<decltype(std::forward<F>(func)(std::forward<Args>(args)...))> >
+    -> future_safe<std::decay_t<decltype(std::forward<F>(func)(std::forward<Args>(args)...))> >
     {
         using R = std::decay_t<decltype(std::forward<F>(func)(std::forward<Args>(args)...))>;
         using T = job_impl_t<R, std::decay_t<F>, std::decay_t<Args>...>;
