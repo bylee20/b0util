@@ -43,7 +43,6 @@ HEADERS +=\
     container.hpp \
     range/filter.hpp \
     range/_range_fn.hpp \
-    range/algorithm.hpp \
     range/counter.hpp \
     range/_terminal_fn.hpp \
     range/reduce.hpp \
@@ -63,4 +62,5 @@ HEADERS +=\
     global.hpp \
     path.hpp \
     range/flatten.hpp \
-    variadic.hpp
+    variadic.hpp \
+    range.hpp

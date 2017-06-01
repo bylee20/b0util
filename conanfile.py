@@ -39,13 +39,14 @@ class B0UtilConan(ConanFile):
         #self.run("cmake --build . --target install %s" % cmake.build_config)
 
     def package(self):
-        self.copy("*.hpp", dst="include/b0util", src="src", keep_path=True)
-        self.copy("*.exe", dst="bin", src="build/bin", keep_path=True)
-        self.copy("*.dll", dst="bin", src="build/bin", keep_path=True)
-        self.copy("*.lib", dst="lib", src="build/lib", keep_path=True)
-        self.copy("*.dylib", dst="lib", src="build/lib", keep_path=True)
-        self.copy("*.so", dst="lib", src="build/lib", keep_path=True)
-        self.copy("*.a", dst="lib", src="build/lib", keep_path=True)
+        bt = str(self.settings.build_type).lower()
+        self.copy("*.hpp", dst="include/b0util", src="src/b0util", keep_path=True)
+        self.copy("*.exe", dst="bin", src="build/%s/bin" % bt, keep_path=True)
+        self.copy("*.dll", dst="bin", src="build/%s/bin" % bt, keep_path=True)
+        self.copy("*.lib", dst="lib", src="build/%s/lib" % bt, keep_path=True)
+        self.copy("*.dylib", dst="lib", src="build/%s/lib" % bt, keep_path=True)
+        self.copy("*.so", dst="lib", src="build/%s/lib" % bt, keep_path=True)
+        self.copy("*.a", dst="lib", src="build/%s/lib" % bt, keep_path=True)
 
     def package_info(self):
         self.cpp_info.defines.append("B0UTIL_SHARED")

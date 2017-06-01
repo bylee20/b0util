@@ -3,6 +3,11 @@
 #include "./type_seq.hpp"
 #include "./int_seq.hpp"
 
+#ifdef B0_CC_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4100)
+#endif
+
 namespace b0 {namespace meta {namespace detail {
 
 template<class MF, class T, class... Args>
@@ -125,3 +130,6 @@ inline constexpr auto variadic_get(Args&&... args) noexcept -> decltype(auto)
 
 }}}
 
+#ifdef B0_CC_MSVC
+#pragma warning(pop)
+#endif

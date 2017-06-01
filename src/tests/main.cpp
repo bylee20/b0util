@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_RUNNER
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <b0util/path.hpp>
 
 auto main(int argc, char** argv) -> int

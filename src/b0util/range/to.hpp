@@ -26,9 +26,9 @@ struct to_container_fn : terminal_fn {
     {
         if (ranges.empty())
             return {};
-        std::size_t size = 0;
+        b0_autotype(std::size(ranges[0])) size = 0;
         for (const auto &r : ranges)
-            size += static_cast<std::size_t>(std::size(r));
+            size += std::size(r);
         C cont;
         cont.reserve(size);
         auto inserter = std::back_inserter(cont);

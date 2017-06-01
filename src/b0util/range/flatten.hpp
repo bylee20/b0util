@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./_range_fn.hpp"
+#include "../global.hpp"
 
 namespace b0 { namespace range {
 
@@ -72,7 +73,12 @@ struct flatten_fn {
             : super(in_place, std::forward<It>(it)) { super::check(); }
         constexpr auto get() const -> auto { return *super::m_cur; }
         constexpr auto size_hint() const -> auto { return npos; }
+#if defined(B0_CC_MSVC) && !defined (__clang_analyzer__)
+        template<B0_REQ(false)>
+        constexpr auto size() const;
+#else
         constexpr auto size() const = delete;
+#endif
         auto next() -> void
         {
             ++super::m_cur;

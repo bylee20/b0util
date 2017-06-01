@@ -16,7 +16,17 @@
 #   define B0_OS B0_OS_WIN
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__)
+#if defined(__INTEL_COMPILER)
+#   define B0_CC_INTEL
+#elif defined(__clang__)
+#   define B0_CC_CLANG
+#elif defined(__GNUC__)
+#   define B0_CC_GNU
+#elif defined(_MSC_VER)
+#   define B0_CC_MSVC
+#endif
+
+#ifdef B0_CC_MSVC
 #define B0_DEP_TMP
 #else
 #define B0_DEP_TMP template

@@ -19,7 +19,14 @@ struct iterator_iterable : iterable {
     using value_type = std::decay_t<decltype(*std::declval<Begin>())>;
 
     constexpr auto at_end() const -> bool { return m_iterator == m_end; }
+#ifdef B0_CC_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4100)
+#endif
     constexpr auto get() const -> decltype(auto) { return *m_iterator; }
+#ifdef B0_CC_MSVC
+#pragma warning(pop)
+#endif
     auto next() -> void { ++m_iterator; }
     constexpr auto size_hint() const -> std::size_t { return npos; }
     constexpr auto iterator() const -> Begin { return m_iterator; }

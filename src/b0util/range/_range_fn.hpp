@@ -7,6 +7,11 @@
 #include <vector>
 #include <iterator>
 
+#ifdef B0_CC_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4100)
+#endif
+
 namespace b0 { namespace range {
 
 template<class T>
@@ -74,3 +79,7 @@ struct range_fn_iterable<T, Iterable, true> : range_fn_iterable_base<T, Iterable
 };
 
 }}
+
+#ifdef B0_CC_MSVC
+#pragma warning(pop)
+#endif

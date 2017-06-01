@@ -4,6 +4,7 @@
 #include "./view.hpp"
 #include "./iterable.hpp"
 #include "../meta/int_seq.hpp"
+#include <cassert>
 #include <vector>
 
 namespace b0 {
@@ -34,7 +35,7 @@ struct pipe_prepend {
     { return make_range_pipe(view(range), std::forward<Pipe>(pipe)); }
 };
 
-template<class T, class FnTuple, bool rund>
+template<class T, class FnTuple, bool terminated>
 struct pipe_fn_base {
     META_ASSERT(meta::is_tuple_v<FnTuple>);
     template<class Fn>
@@ -44,7 +45,7 @@ struct pipe_fn_base {
 
     using tuple_type = FnTuple;
     static constexpr int size_v = std::tuple_size_v<FnTuple>;
-    static constexpr bool is_rund = rund;
+    static constexpr bool is_terminated = terminated;
 
     template<class P>
     using concat_tuple_t = decltype(
@@ -59,36 +60,10 @@ struct pipe_fn_base {
     template<class Range, B0_REQ(meta::is_range<Range>::value)>
     friend constexpr auto operator | (Range &&range, pipe_fn_base &&pipe) -> auto
     { return pipe_prepend<std::decay_t<Range>>::apply(std::forward<Range>(range), static_cast<T&&>(pipe)); }
-protected:
+
     constexpr auto tuple() const& -> const FnTuple& { return m_fnTuple; }
     constexpr auto tuple() && -> FnTuple&& { return std::move(m_fnTuple); }
-#pragma warning(push)
-#pragma warning(disable: 4100)
-    template<int I, int N, class Range>
-    constexpr auto make_iterable(Range &&range) const -> auto
-    { return make_iterable<I>(std::forward<Range>(range), meta::make_int_seq<N>()); }
-    template<int I, class Range, int... Ints>
-    constexpr auto make_iterable(Range &&range, meta::int_seq<Ints...>) const -> auto
-    { return make_iterable<I + 1, sizeof...(Ints) - 1>(get<I>().make_iterable(std::forward<Range>(range))); }
-    template<class Range>
-    constexpr auto make_range_iterable(Range &&range) const -> auto
-    { return make_iterable<0, rund ? (size() - 1) : size()>(wrap(std::forward<Range>(range))); }
-#pragma warning(pop)
-    template<int I, class Range>
-    constexpr auto make_iterable(Range &&range, meta::int_seq<>) const -> std::decay_t<Range>
-        { return std::forward<Range>(range); }
-    template<int I>
-    constexpr auto get() const& -> const std::tuple_element_t<I, FnTuple>&
-        { return std::get<I>(m_fnTuple); }
-    template<int I>
-    constexpr auto get() && -> std::tuple_element_t<I, FnTuple>&&
-        { return std::get<I>(std::move(m_fnTuple)); }
-
-    constexpr auto back() const& -> const auto& { return get<size() - 1>(); }
-    constexpr auto back() && -> auto&& { return get<size() - 1>(); }
 private:
-    template<class Tuple, bool t>
-    friend struct pipe_fn;
     FnTuple m_fnTuple;
 };
 
@@ -101,35 +76,32 @@ struct pipe_fn<FnTuple, false> : pipe_fn_base<pipe_fn<FnTuple, false>, FnTuple, 
     template<class Fn>
     constexpr pipe_fn(in_place_t, Fn &&fn): super(in_place, std::forward<Fn>(fn)) {}
 
-#pragma warning(push)
-#pragma warning(disable: 4100)
-    template<class Range>
-    constexpr  auto operator () (Range &&range) const -> auto
-    { return this->make_range_iterable(std::forward<Range>(range)).run(); }
-#pragma warning(pop)
+//#pragma warning(push)
+//#pragma warning(disable: 4100)
+//    template<class Range>
+//    constexpr  auto operator () (Range &&range) const -> auto
+//    { return this->make_range_iterable(std::forward<Range>(range)).run(); }
+//#pragma warning(pop)
 
     template<class Tuple, bool t>
     constexpr auto operator | (const pipe_fn<Tuple, t> &rhs) const&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(this->tuple(), rhs.m_fnTuple) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), rhs.tuple()) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (const pipe_fn<Tuple, t> &rhs) &&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(this->tuple(), rhs.m_fnTuple) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), rhs.tuple()) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (pipe_fn<Tuple, t> &&rhs) const&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.m_fnTuple)) }; }
+    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.tuple())) }; }
 
     template<class Tuple, bool t>
     constexpr auto operator | (pipe_fn<Tuple, t> &&rhs) &&
     -> pipe_fn<meta::tuple_cat_t<FnTuple, Tuple>, t>
-    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.m_fnTuple)) }; }
-private:
-    template<class Tuple, bool t>
-    friend struct pipe_fn;
+    { return { in_place, std::tuple_cat(this->tuple(), std::move(rhs.tuple())) }; }
 };
 
 template<class FnTuple>
@@ -138,12 +110,14 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
     template<class Fn>
     constexpr pipe_fn(in_place_t, Fn &&fn): super(in_place, std::forward<Fn>(fn)) {}
 
+    static constexpr int i_back = super::size_v - 1;
+
 #pragma warning(push)
 #pragma warning(disable: 4100)
 
     template<class Range>
     auto apply(Range &&range, run_seq_t) const -> auto
-    { return this->back().run(this->make_range_iterable(std::forward<Range>(range))); }
+    { return get<i_back>().run(this->make_range_iterable(std::forward<Range>(range))); }
 
     template<class Range>
     auto apply(Range &&range, run_par_async_t) const& -> auto
@@ -156,10 +130,10 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
     template<class Range>
     auto apply(Range &&range, run_par_sync_t) const -> auto
     {
-        using Iterable = decltype(this->make_iterable<0, size() - 1>(wrap(range)));
-        using R = std::decay_t<decltype(get<this->size() - 1>().run(std::declval<Iterable>()))>;
+        using Iterable = decltype(make_iterable<0, i_back>(wrap(range)));
+        using R = std::decay_t<decltype(get<i_back>().run(std::declval<Iterable>()))>;
         std::vector<R> results;
-        auto size = std::size(std::forward<Range>(range));
+        std::size_t size = static_cast<std::size_t>(std::size(std::forward<Range>(range)));
         if (size != 0) {
             const std::size_t concurrency = static_cast<std::size_t>(b0::ideal_concurrency());
             auto pos = std::cbegin(range);
@@ -178,6 +152,7 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
                 auto end = pos;
                 threads.emplace_back(run, std::move(begin), std::move(end), count, out);
                 ++out;
+                assert(size >= count);
                 size -= count;
             };
             for (std::size_t i = 0; i < remainder; ++i)
@@ -191,7 +166,6 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
         return get<this->size() - 1>().parallel(std::move(results));
     }
 
-
     template<class Range>
     constexpr auto operator () (Range &&range) const -> auto
     { return apply(std::forward<Range>(range),
@@ -199,8 +173,28 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
 #pragma warning(pop)
 private:
 
-    template<class Tuple, bool t>
-    friend struct pipe_fn;
+#pragma warning(push)
+#pragma warning(disable: 4100)
+    template<int I, int N, class Range>
+    constexpr auto make_iterable(Range &&range) const -> auto
+    { return make_iterable<I>(std::forward<Range>(range), meta::make_int_seq<N>()); }
+    template<int I, class Range, int... Ints>
+    constexpr auto make_iterable(Range &&range, meta::int_seq<Ints...>) const -> auto
+    { return make_iterable<I + 1, sizeof...(Ints) - 1>(get<I>().make_iterable(std::forward<Range>(range))); }
+    template<class Range>
+    constexpr auto make_range_iterable(Range &&range) const -> auto
+    { return make_iterable<0, i_back>(wrap(std::forward<Range>(range))); }
+#pragma warning(pop)
+    template<int I, class Range>
+    constexpr auto make_iterable(Range &&range, meta::int_seq<>) const -> std::decay_t<Range>
+        { return std::forward<Range>(range); }
+
+    template<int I>
+    constexpr auto get() const& -> const std::tuple_element_t<I, FnTuple>&
+        { return std::get<I>(this->tuple()); }
+    template<int I>
+    constexpr auto get() && -> std::tuple_element_t<I, FnTuple>&&
+        { return std::get<I>(std::move(this->tuple())); }
 };
 
 template<class Fn>
@@ -244,8 +238,8 @@ constexpr auto make_range_pipe(Range &&range, Pipe &&pipe, meta::false_)
 template<class Range, class Pipe>
 constexpr auto make_range_pipe(Range &&range, Pipe &&pipe) -> auto
 {
-    using rund = meta::bool_<std::decay_t<Pipe>::is_rund>;
-    return detail::make_range_pipe(std::forward<Range>(range), std::forward<Pipe>(pipe), rund());
+    using done = meta::bool_<std::decay_t<Pipe>::is_terminated>;
+    return detail::make_range_pipe(std::forward<Range>(range), std::forward<Pipe>(pipe), done());
 }
 
 }

@@ -9,7 +9,7 @@
 namespace b0
 {
 
-template<class T>
+template<class T, thread_safety ts>
 class future;
 
 class promise_error : public std::runtime_error {
@@ -20,10 +20,15 @@ public:
 };
 
 template<class T>
+using promise_safe = promise<T, thread_safety::safe>;
+template<class T>
+using promise_unsafe = promise<T, thread_safety::unsafe>;
+
+template<class T, thread_safety ts = thread_safety::safe>
 class promise {
 public:
-    promise(): m_data(new b0::detail::future_data<T>()) { }
-    auto future() const -> auto { return b0::future<T>(m_data); }
+    promise(): m_data(new b0::detail::future_data<T, ts>()) { }
+    auto future() const -> auto { return b0::future<T, ts>(m_data); }
     template<class U>
     auto resolve(U &&u) const -> void { m_data->resolve(std::forward<U>(u)); }
     template<class E>
@@ -50,14 +55,19 @@ public:
         }
     }
 protected:
-    std::shared_ptr<b0::detail::future_data<T> > m_data;
+    std::shared_ptr<b0::detail::future_data<T, ts> > m_data;
 };
 
 template<class T>
+using future_safe = future<T, thread_safety::safe>;
+template<class T>
+using future_unsafe = future<T, thread_safety::unsafe>;
+
+template<class T, thread_safety ts = thread_safety::safe>
 class future {
     B0_USING_REQ_T;
     static constexpr bool is_void = std::is_void_v<T>;
-    using data_t = b0::detail::future_data<T>;
+    using data_t = b0::detail::future_data<T, ts>;
     META_ASSERT(!is_future_v<T>);
     META_ASSERT(!meta::eq_v<T, std::exception_ptr>);
 public:
@@ -73,8 +83,8 @@ public:
     static auto resolve(U &&u) -> future
     { return future(std::make_shared<data_t>(detail::future_resolved_t(), std::forward<U>(u))); }
 
-    static auto reject(std::exception_ptr e) -> future<T>
-    { return future<T>(std::make_shared<data_t>(e)); }
+    static auto reject(std::exception_ptr e) -> future<T, ts>
+    { return future<T, ts>(std::make_shared<data_t>(e)); }
 
     template<class F, class... Args>
     static auto invoke_and_settle(F &&func, Args&&... args) -> future
@@ -107,8 +117,8 @@ public:
     auto then(OnResolved &&onResolved, OnRejected &&onRejected) const -> auto
     {
         using b0::detail::future_wrap;
-        return m_data->then(future_wrap<const T&>(std::forward<OnResolved>(onResolved)),
-                            future_wrap<std::exception_ptr>(std::forward<OnRejected>(onRejected)));
+        return m_data->then(future_wrap<ts, const T&>(std::forward<OnResolved>(onResolved)),
+                            future_wrap<ts, std::exception_ptr>(std::forward<OnRejected>(onRejected)));
     }
     template<class F>
     auto then(F &&func) const -> auto
@@ -132,7 +142,7 @@ public:
             throw std::logic_error("future::get(): unable state");
     }
 
-    auto propagate(promise<T> promise) const -> future<T>
+    auto propagate(promise<T, ts> promise) const -> future<T, ts>
     {
         try {
             switch (m_data->state()) {
@@ -178,19 +188,19 @@ public:
         return then(std::move(onResolved), std::forward<F>(func));
     }
 protected:
-    friend class promise<T>;
+    friend class promise<T, ts>;
     future(std::shared_ptr<data_t> data): m_data(std::move(data)) { }
     std::shared_ptr<data_t> m_data;
 };
 
-template<>
-class future<void> : public future<meta::void_t>
+template<thread_safety ts>
+class future<void, ts> : public future<meta::void_t, ts>
 {
 public:
-    future<void>() {}
-    future<void>(future<meta::void_t> &&other): future<meta::void_t>(std::move(other)) {}
-    future<void>(const future<meta::void_t> &other): future<meta::void_t>(other) {}
-    static auto resolve() -> future<meta::void_t> { return future<meta::void_t>::resolve(meta::void_t()); }
+    future<void, ts>() {}
+    future<void, ts>(future<meta::void_t, ts> &&other): future<meta::void_t, ts>(std::move(other)) {}
+    future<void, ts>(const future<meta::void_t, ts> &other): future<meta::void_t, ts>(other) {}
+    static auto resolve() -> future<meta::void_t, ts> { return future<meta::void_t, ts>::resolve(meta::void_t()); }
     template<class F, class... Args>
     inline auto make_invoke_and_settle(F &&func, Args&&... args) -> auto
     {
@@ -214,11 +224,11 @@ public:
     }
 };
 
-template<>
-class promise<void> : public promise<meta::void_t>
+template<thread_safety ts>
+class promise<void, ts> : public promise<meta::void_t, ts>
 {
 public:
-    constexpr auto resolve() const -> void { promise<meta::void_t>::resolve(meta::void_t()); }
+    constexpr auto resolve() const -> void { promise<meta::void_t, ts>::resolve(meta::void_t()); }
     template<class F, class... Args>
     auto invoke_and_settle(F &&func, Args&&... args) -> void
     {
@@ -277,9 +287,10 @@ namespace detail {
 
 template<int I, int N, bool = (I < N && 1 > 0)>
 struct future_all_s {
-    template<class Tuple, class T, class... Args>
-    static auto apply(b0::promise<Tuple> &promise, std::shared_ptr<Tuple> tuple, std::shared_ptr<std::atomic_int32_t> counter,
-                      const b0::future<T> &future, const b0::future<Args>&... args) -> void
+    template<thread_safety ts, class Tuple, class T, class... Args>
+    static auto apply(b0::promise<Tuple, ts> &promise, std::shared_ptr<Tuple> tuple,
+                      std::shared_ptr<std::atomic_int32_t> counter,
+                      const b0::future<T, ts> &future, const b0::future<Args, ts>&... args) -> void
     {
         future.then([=] (const b0::meta::wrap_void_t<T> &t) {
             std::get<I>(*tuple) = t;
@@ -294,31 +305,31 @@ struct future_all_s {
 
 template<int I, int N>
 struct future_all_s<I, N, false> {
-    template<class Tuple>
-    static auto apply(b0::promise<Tuple> &, std::shared_ptr<Tuple>, std::shared_ptr<std::atomic_int32_t>) -> void {}
+    template<thread_safety ts, class Tuple>
+    static auto apply(b0::promise<Tuple, ts> &, std::shared_ptr<Tuple>, std::shared_ptr<std::atomic_int32_t>) -> void {}
 };
 
 }
 
-template<class... Args>
-auto future_all(future<Args>... futures) -> auto
+template<thread_safety ts, class... Args>
+auto future_all(future<Args, ts>... futures) -> auto
 {
     using tuple_type = std::tuple<meta::wrap_void_t<Args>...>;
     auto counter = std::make_shared<std::atomic_int32_t>(0);
     auto tuple = std::make_shared<tuple_type>();
-    b0::promise<tuple_type> promise;
+    b0::promise<tuple_type, ts> promise;
     b0::detail::future_all_s<0, sizeof...(Args)>::apply(promise, tuple, counter, futures...);
     return promise.future();
 }
 
-template<class T>
-auto future_all(std::initializer_list<b0::future<T> > futures) -> auto
+template<thread_safety ts, class T>
+auto future_all(std::initializer_list<b0::future<T, ts> > futures) -> auto
 {
     using type = meta::wrap_void_t<T>;
     auto results = std::make_shared<std::vector<type> >(futures.size());
     auto counter = std::make_shared<std::atomic_int32_t>(0);
     const int len = static_cast<int>(futures.size());
-    b0::promise<std::vector<type> > promise;
+    b0::promise<std::vector<type>, ts> promise;
     auto it = futures.begin();
     for (int i = 0; i < len; ++i, ++it) {
         it->then([=] (const type &t) {

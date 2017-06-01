@@ -17,7 +17,14 @@ struct map_fn {
             : super(in_place, std::forward<It>(it))
             , m_fn(std::forward<F>(fn)) {}
         using value_type = meta::invoke_t<Fn, const typename super::value_type&>;
+#ifdef B0_CC_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4100)
+#endif
         constexpr auto get() const -> decltype(auto) { return m_fn(super::get()); }
+#ifdef B0_CC_MSVC
+#pragma warning(pop)
+#endif
     private:
         Fn m_fn;
     };
