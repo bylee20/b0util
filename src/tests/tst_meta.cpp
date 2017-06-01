@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <iostream>
 #include <b0util/meta/meta.hpp>
 #include <b0util/meta/type_seq.hpp>

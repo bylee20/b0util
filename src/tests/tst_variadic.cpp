@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <memory>
 #include <functional>
 #include <b0util/variadic.hpp>

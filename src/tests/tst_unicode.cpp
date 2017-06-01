@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <b0util/unicode.hpp>
 
 TEST_CASE("unicode") {

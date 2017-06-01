@@ -1,6 +1,6 @@
 #pragma once
 
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <b0util/future.hpp>
 #include <future>
 #include <chrono>

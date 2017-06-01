@@ -1,4 +1,4 @@
-#include <catch.hpp>
+#include <catch/catch.hpp>
 #include <b0util/symbol/symbol.hpp>
 #include <b0util/symbol/object.hpp>
 #include <b0util/symbol/factory.hpp>

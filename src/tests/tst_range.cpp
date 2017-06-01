@@ -1,7 +1,7 @@
-#include <b0util/range/algorithm.hpp>
+#include <b0util/range.hpp>
 #include <deque>
 #include <list>
-#include <catch.hpp>
+#include <catch/catch.hpp>
 
 TEST_CASE("range") {
     using namespace b0::range;
@@ -39,6 +39,8 @@ TEST_CASE("range") {
         REQUIRE((vec | max()) == 5.0);
         REQUIRE((vec | min()) == 0.0);
         REQUIRE((vec | minmax()) == std::make_pair(0.0, 5.0));
+
+        REQUIRE(map_to<std::vector>(counter(0) | limit(3) | to<std::vector>(), [] (auto v) { return v + 1; }) == (std::vector<int>{1, 2, 3}));
     }
 
     SECTION("find/find_if") {
@@ -77,5 +79,11 @@ TEST_CASE("range") {
         REQUIRE(*minmax.second == 5.0);
         REQUIRE(std::distance(vec.begin(), minmax.first) == 3);
         REQUIRE(std::distance(vec.begin(), minmax.second) == 1);
+    }
+
+    SECTION("parallel") {
+        auto input = counter(0) | limit(10) | to<std::vector>();
+        auto output = input | map([] (auto v) { return v + 1; }) | to<std::vector>(b0::run_par_sync);
+        REQUIRE(output == (std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
     }
 }
