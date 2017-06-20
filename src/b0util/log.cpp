@@ -77,4 +77,7 @@ auto logger::context(std::string &&name) const -> logger_context
     return logger_context(std::move(name), *this);
 }
 
+const std::string logger_context::s_default_pattern = "[{}] ";
+const std::string logger_context::s_default_separator = "/";
+
 }
