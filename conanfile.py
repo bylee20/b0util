@@ -28,7 +28,6 @@ class B0UtilConan(ConanFile):
         with tools.chdir("./src"):
             self.run_msvc("qmake -spec win32-msvc CONFIG+=no_test CONFIG+=%s b0util.pro" % bs)
             if self.settings.os == "Windows":
-                vcvars = tools.vcvars_command(self.settings)
                 self.run_msvc("jom qmake_all")
                 self.run_msvc("jom -j%d" % tools.cpu_count())
         #cmake = CMake(self.settings)
