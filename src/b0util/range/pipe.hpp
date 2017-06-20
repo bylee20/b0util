@@ -127,13 +127,10 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
         }, std::forward<Range>(range));
     }
 
-    template<class Range>
-    auto apply(Range &&range, run_par_sync_t) const -> auto
+    template<class R, class Range>
+    auto apply_sync(Range &&range, b0::meta::req_t<!std::is_void_v<R>, std::size_t> size) const -> auto
     {
-        using Iterable = decltype(make_iterable<0, i_back>(wrap(range)));
-        using R = std::decay_t<decltype(get<i_back>().run(std::declval<Iterable>()))>;
         std::vector<R> results;
-        std::size_t size = static_cast<std::size_t>(std::size(std::forward<Range>(range)));
         if (size != 0) {
             const std::size_t concurrency = static_cast<std::size_t>(b0::ideal_concurrency());
             auto pos = std::cbegin(range);
@@ -164,6 +161,46 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
                 t.join();
         }
         return get<this->size() - 1>().parallel(std::move(results));
+    }
+
+    template<class R, class Range>
+    auto apply_sync(Range &&range, b0::meta::req_t<std::is_void_v<R>, std::size_t> size) const -> void
+    {
+        if (size != 0) {
+            const std::size_t concurrency = static_cast<std::size_t>(b0::ideal_concurrency());
+            auto pos = std::cbegin(range);
+            const auto blocks = size / concurrency;
+            const auto remainder = size % concurrency;
+            std::vector<std::thread> threads;
+            threads.reserve(static_cast<std::size_t>(concurrency - 1));
+            auto run = [&] (auto begin, auto end, std::size_t count) {
+                this->apply(view(std::move(begin), std::move(end), count), run_seq);
+            };
+            auto push = [&] (std::size_t count) {
+                auto begin = pos;
+                std::advance(pos, count);
+                auto end = pos;
+                threads.emplace_back(run, std::move(begin), std::move(end), count);
+                assert(size >= count);
+                size -= count;
+            };
+            for (std::size_t i = 0; i < remainder; ++i)
+                push(blocks + 1);
+            for (std::size_t i = remainder; i < concurrency - 1; ++i)
+                push(blocks);
+            run(pos, std::end(std::forward<decltype(range)>(range)), size);
+            for (auto &t : threads)
+                t.join();
+        }
+    }
+
+    template<class Range>
+    auto apply(Range &&range, run_par_sync_t) const -> auto
+    {
+        using Iterable = decltype(make_iterable<0, i_back>(wrap(range)));
+        using R = std::decay_t<decltype(get<i_back>().run(std::declval<Iterable>()))>;
+        std::size_t size = static_cast<std::size_t>(std::size(std::forward<Range>(range)));
+        return apply_sync<R>(std::forward<Range>(range), size);
     }
 
     template<class Range>

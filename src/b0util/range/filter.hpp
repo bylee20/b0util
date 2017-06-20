@@ -21,7 +21,7 @@ protected:
     {
         while (!at_end()) {
             m_cache = super::get();
-            if (m_fn(m_cache))
+            if (b0::invoke(m_fn, m_cache))
                 break;
             super::next();
         }
@@ -41,7 +41,7 @@ protected:
     auto check() -> void
     {
         while (!super::at_end()) {
-            if (m_fn(super::get()))
+            if (b0::invoke(m_fn, super::get()))
                 break;
             super::next();
         }

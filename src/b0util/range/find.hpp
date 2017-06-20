@@ -13,7 +13,7 @@ struct find_if_fn : terminal_fn {
     auto run(Iterable &&it) const -> auto
     {
         for (; !it.at_end(); it.next()) {
-            if (m_fn(it.get()))
+            if (b0::invoke(m_fn, it.get()))
                 break;
         }
         return it.iterator();
@@ -43,7 +43,7 @@ struct find_max_fn : terminal_fn {
             auto value = it.get();
             for (it.next(); !it.at_end(); it.next()) {
                 auto tmp = it.get();
-                if (m_fn(value, tmp)) {
+                if (b0::invoke(m_fn, value, tmp)) {
                     value = std::move(tmp);
                     pos = it.iterator();
                 }
@@ -72,7 +72,7 @@ struct find_min_fn : terminal_fn {
             auto value = it.get();
             for (it.next(); !it.at_end(); it.next()) {
                 auto tmp = it.get();
-                if (m_fn(tmp, value)) {
+                if (b0::invoke(m_fn, tmp, value)) {
                     value = std::move(tmp);
                     pos = it.iterator();
                 }

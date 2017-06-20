@@ -2,6 +2,7 @@
 
 #include "../utility.hpp"
 #include "../meta/container.hpp"
+#include "../meta/iterator.hpp"
 #include <iostream>
 
 namespace b0 { namespace range {
@@ -34,8 +35,6 @@ struct iterator_range {
 
     constexpr auto begin() const -> Begin { return m_begin; }
     constexpr auto end() const -> End { return m_end; }
-    constexpr auto size() const
-    -> decltype(std::declval<Begin>() - std::declval<End>()) { return m_end - m_begin; }
 private:
     Begin m_begin; End m_end;
 };
@@ -52,7 +51,6 @@ private:
 };
 
 namespace detail {
-
 template<class Range>
 constexpr inline auto make_view(Range &&range, meta::true_)
 -> sized_iterator_range<begin_t<Range&>, end_t<Range&>, std::decay_t<decltype(std::size(range))> >
@@ -63,12 +61,20 @@ constexpr inline auto make_view(Range &&range, meta::false_)
 -> iterator_range<begin_t<Range&>, end_t<Range&> >
 { return {std::begin(range), std::end(range)}; }
 
+template<class Begin, class End>
+constexpr inline auto make_iterator_view(Begin &&begin, End &&end, meta::true_)
+-> sized_iterator_range<std::decay_t<Begin>, std::decay_t<End>, std::decay_t<decltype(std::declval<End>() - std::declval<Begin>())> >
+{ return {std::forward<Begin>(begin), std::forward<End>(end), end - begin}; }
+
+template<class Begin, class End>
+constexpr inline auto make_iterator_view(Begin &&begin, End &&end, meta::false_)
+-> iterator_range<std::decay_t<Begin>, std::decay_t<End> >
+{ return {std::forward<Begin>(begin), std::forward<End>(end)}; }
 }
 
 template<class Begin, class End>
-constexpr inline auto view(Begin &&begin, End &&end)
--> iterator_range<std::decay_t<Begin>, std::decay_t<End>>
-{ return { std::forward<Begin>(begin), std::forward<End>(end) }; }
+constexpr inline auto view(Begin &&begin, End &&end) -> auto
+{ return detail::make_iterator_view(std::forward<Begin>(begin), std::forward<End>(end), b0::meta::is_random_access_iterator<std::decay_t<Begin>>()); }
 
 template<class Begin, class End, class S>
 constexpr inline auto view(Begin &&begin, End &&end, S size)

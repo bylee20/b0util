@@ -21,7 +21,7 @@ struct map_fn {
 #pragma warning(push)
 #pragma warning(disable: 4100)
 #endif
-        constexpr auto get() const -> decltype(auto) { return m_fn(super::get()); }
+        constexpr auto get() const -> decltype(auto) { return b0::invoke(m_fn, super::get()); }
 #ifdef B0_CC_MSVC
 #pragma warning(pop)
 #endif

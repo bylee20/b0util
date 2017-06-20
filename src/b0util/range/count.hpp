@@ -16,7 +16,7 @@ struct count_if_fn : terminal_fn {
     {
         int count = 0;
         for (; !it.at_end(); it.next()) {
-            if (m_fn(it.get()))
+            if (b0::invoke(m_fn, it.get()))
                 ++count;
         }
         return count;

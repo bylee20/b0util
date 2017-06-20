@@ -18,7 +18,7 @@ struct reduce_fn_base : terminal_fn {
     {
         auto acc = static_cast<const T&>(*this).get_init(it);
         for (; !it.at_end(); it.next())
-            m_fn(acc, it.get());
+            b0::invoke(m_fn, acc, it.get());
         return acc;
     }
     template<class T>
@@ -29,7 +29,7 @@ struct reduce_fn_base : terminal_fn {
         auto it = values.begin();
         auto init = *it;
         for (++it; it != values.end(); ++it)
-            m_fn(init, std::move(*it));
+            b0::invoke(m_fn, init, std::move(*it));
         return init;
     }
 protected:
