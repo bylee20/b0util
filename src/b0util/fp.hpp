@@ -4,6 +4,11 @@
 #include "./meta/int_seq.hpp"
 #include "./meta/callable.hpp"
 
+#ifdef B0_CC_MSVC
+#pragma warning(push)
+#pragma warning(disable: 4100)
+#endif
+
 namespace b0 {
 
 template<int I, class... Args>
@@ -70,3 +75,7 @@ constexpr inline auto for_each_if(Args&&... args, const F &f)
 B0_RETURN_BODY(detail::for_each_if_impl(std::forward<Args>(args)..., f))
 
 }
+
+#ifdef B0_CC_MSVC
+#pragma warning(pop)
+#endif
