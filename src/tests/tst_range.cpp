@@ -83,7 +83,48 @@ TEST_CASE("range") {
 
     SECTION("parallel") {
         auto input = counter(0) | limit(10) | to<std::vector>();
-        auto output = input | map([] (auto v) { return v + 1; }) | to<std::vector>(b0::run_par_sync);
+        auto output = map_to<std::vector>(b0::run_par_sync, input, [] (auto v) { return v + 1; });
         REQUIRE(output == (std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
+
+        for_each(b0::run_seq, input, [] (auto &&v) { v += 1; });
+        REQUIRE(input == output);
+    }
+
+    SECTION("benchmark") {
+        auto run = [&] (auto &&fn) {
+            using namespace std::chrono;
+            auto start = steady_clock::now();
+            fn();
+            auto end = steady_clock::now();
+            return duration_cast<nanoseconds>(end - start).count();
+        };
+
+        struct Tester {
+            auto log() const -> double { return std::log(m_value); }
+            double m_value;
+        };
+
+        std::vector<Tester> input(1000);
+        for (std::size_t i = 0; i < input.size(); ++i)
+            input[i].m_value =  i + 1;
+        std::vector<double> output1, output2, output3;
+        const auto t1 = run([&] () {
+            std::vector<double> output;
+            output.reserve(input.size());
+            for (auto &i : input)
+                output.emplace_back(i.log());
+            output1 = std::move(output);
+        });
+        const auto t2 = run([&] () {
+            output2 = b0::range::map_to<std::vector>(input, [] (auto &&i) { return i.log(); });
+        });
+        const auto t3 = run([&] () {
+            output3 = b0::range::map_to<std::vector>(input, &Tester::log);
+        });
+        CAPTURE(t1);
+        CAPTURE(t2);
+        CAPTURE(t3);
+        REQUIRE(output1 == output2);
+        REQUIRE(output1 == output3);
     }
 }
