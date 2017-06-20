@@ -27,24 +27,64 @@ template<template<class...> class Cont, class Range, class Fn>
 constexpr inline auto map_to(Range &&range, Fn &&fn) -> auto
 { return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(); }
 
+template<template<class...> class Cont, class Range, class Fn>
+constexpr inline auto map_to(const Range &range, Fn &&fn) -> auto
+{ return view(range) | map(std::forward<Fn>(fn)) | to<Cont>(); }
+
 template<class Cont, class Range, class Fn>
 constexpr inline auto map_to(Range &&range, Fn &&fn) -> auto
 { return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(); }
 
-template<template<class...> class Cont, class Range, class Fn, run_policy p>
-constexpr inline auto map_to(run_policy_t<p>, Range &&range, Fn &&fn) -> auto
-{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_policy_t<p>()); }
+template<class Cont, class Range, class Fn>
+constexpr inline auto map_to(const Range &range, Fn &&fn) -> auto
+{ return view(range) | map(std::forward<Fn>(fn)) | to<Cont>(); }
 
-template<class Cont, class Range, class Fn, run_policy p>
-constexpr inline auto map_to(run_policy_t<p>, Range &&range, Fn &&fn) -> auto
-{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_policy_t<p>()); }
+template<template<class...> class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_seq_t, Range &&range, Fn &&fn) -> auto
+{ return map_to<Cont>(std::forward<Range>(range), std::forward<Fn>(fn)); }
+
+template<template<class...> class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_async_t, Range &&range, Fn &&fn) -> auto
+{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_async); }
+
+template<template<class...> class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_sync_t, Range &&range, Fn &&fn) -> auto
+{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_sync); }
+
+template<template<class...> class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_sync_t, const Range &range, Fn &&fn) -> auto
+{ return view(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_sync); }
+
+template<class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_seq_t, Range &&range, Fn &&fn) -> auto
+{ return map_to<Cont>(std::forward<Range>(range), std::forward<Fn>(fn)); }
+
+template<class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_async_t, Range &&range, Fn &&fn) -> auto
+{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_async); }
+
+template<class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_sync_t, Range &&range, Fn &&fn) -> auto
+{ return std::forward<Range>(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_sync); }
+
+template<class Cont, class Range, class Fn>
+constexpr inline auto map_to(run_par_sync_t, const Range &range, Fn &&fn) -> auto
+{ return view(range) | map(std::forward<Fn>(fn)) | to<Cont>(run_par_sync); }
 
 template<class Range, class Fn>
 constexpr inline auto for_each(Range &&range, Fn &&fn) -> auto
-{ return std::forward<Range>(range) | for_each(std::forward<Fn>(fn)); }
+{ return view(std::forward<Range>(range)) | for_each(std::forward<Fn>(fn)); }
 
-template<class Range, class Fn, run_policy p>
-constexpr inline auto for_each(run_policy_t<p>, Range &&range, Fn &&fn) -> auto
-{ return std::forward<Range>(range) | for_each(run_policy_t<p>(), std::forward<Fn>(fn)); }
+template<class Range, class Fn>
+constexpr inline auto for_each(run_seq_t, Range &&range, Fn &&fn) -> auto
+{ return for_each(std::forward<Range>(range), std::forward<Fn>(fn)); }
+
+template<class Range, class Fn>
+constexpr inline auto for_each(run_par_async_t, Range &&range, Fn &&fn) -> auto
+{ return std::forward<Range>(range) | for_each(run_par_async, std::forward<Fn>(fn)); }
+
+template<class Range, class Fn>
+constexpr inline auto for_each(run_par_sync_t, Range &&range, Fn &&fn) -> auto
+{ return view(std::forward<Range>(range)) | for_each(run_par_sync, std::forward<Fn>(fn)); }
 
 }}

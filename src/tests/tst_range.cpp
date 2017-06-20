@@ -52,7 +52,7 @@ TEST_CASE("range") {
 
     SECTION("for_each") {
         auto vector = counter(0) | limit(10) | to<std::vector>();
-        view(vector) | for_each([] (auto &&v) { v *= 2; });
+        for_each(vector, [] (auto &&v) { v *= 2; });
         REQUIRE(vector == (counter(0, 2) | limit(10) | to<std::vector>()));
     }
 
@@ -86,7 +86,7 @@ TEST_CASE("range") {
         auto output = map_to<std::vector>(b0::run_par_sync, input, [] (auto v) { return v + 1; });
         REQUIRE(output == (std::vector<int>{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}));
 
-        for_each(b0::run_seq, input, [] (auto &&v) { v += 1; });
+        for_each(b0::run_par_sync, input, [] (auto &&v) { v += 1; });
         REQUIRE(input == output);
     }
 
@@ -104,7 +104,7 @@ TEST_CASE("range") {
             double m_value;
         };
 
-        std::vector<Tester> input(1000);
+        std::vector<Tester> input(10000000);
         for (std::size_t i = 0; i < input.size(); ++i)
             input[i].m_value =  i + 1;
         std::vector<double> output1, output2, output3;
