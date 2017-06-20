@@ -23,7 +23,8 @@ SOURCES += \
     tst_future_3.cpp \
     tst_range.cpp \
     tst_unicode.cpp \
-    tst_variadic.cpp
+    tst_variadic.cpp \
+    tst_log.cpp
 
 HEADERS += \
     tst_future.hpp
