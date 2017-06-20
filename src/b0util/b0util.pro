@@ -3,7 +3,8 @@ include(../common.pri)
 
 TARGET = b0util
 
-QT -= gui
+QT -= core gui
+
 CONFIG += c++14
 DEFINES += B0UTIL_LIBRARY
 

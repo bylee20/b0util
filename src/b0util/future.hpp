@@ -73,12 +73,12 @@ class future {
 public:
     using value_type = T;
 
-    future(): m_data(new data_t()) { }
+    future() { }
     future(future&&) = default;
     future(const future&) = default;
     auto operator = (future&&) -> future& = default;
     auto operator = (const future&) -> future& = default;
-
+    operator bool() const { return m_data.get(); }
     template<class U>
     static auto resolve(U &&u) -> future
     { return future(std::make_shared<data_t>(detail::future_resolved_t(), std::forward<U>(u))); }

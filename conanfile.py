@@ -1,5 +1,4 @@
 from conans import ConanFile, tools
-import os
 
 class B0UtilConan(ConanFile):
     name    = "b0util"
@@ -20,16 +19,18 @@ class B0UtilConan(ConanFile):
         #self.copy("*.dll", dst="bin", src="bin") # From bin to bin
         #self.copy("*.dylib*", dst="bin", src="lib") # From lib to bin
 
+    def run_msvc(self, cmd):
+        vcvars = tools.vcvars_command(self.settings)
+        self.run("%s && %s" % (vcvars, cmd))
 
     def build(self):
-        print(str(self.settings.build_type).lower())
-        os.chdir("src")
-        self.run("qmake CONFIG+=no_test CONFIG+=%s b0util.pro" % str(self.settings.build_type).lower())
-        if self.settings.os == "Windows":
-            vcvars = tools.vcvars_command(self.settings)
-            make = "jom -j%d" % tools.cpu_count()
-            self.run("jom qmake_all")
-            self.run("%s && %s" % (vcvars, make))
+        bs = str(self.settings.build_type).lower()
+        with tools.chdir("./src"):
+            self.run_msvc("qmake -spec win32-msvc CONFIG+=no_test CONFIG+=%s b0util.pro" % bs)
+            if self.settings.os == "Windows":
+                vcvars = tools.vcvars_command(self.settings)
+                self.run_msvc("jom qmake_all")
+                self.run_msvc("jom -j%d" % tools.cpu_count())
         #cmake = CMake(self.settings)
         #flags = "-DBUILD_SHARED_LIBS=TRUE -DFMT_TEST=FALSE -DFMT_INSTALL=TRUE -DFMT_DOCS=FALSE"
         #flags += " -DCMAKE_INSTALL_PREFIX=\"%s\"" % self.package_folder

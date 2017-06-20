@@ -2,8 +2,11 @@
 
 TEST_CASE("promise_3") {
     {
+        b0::future_unsafe<int> future;
+        REQUIRE(!future);
         b0::promise_unsafe<int> promise;
-        auto future = promise.future();
+        future = promise.future();
+        REQUIRE(future);
         int value = 0;
         future.then([&value] (int v) { value = v; });
         promise.resolve(10);
