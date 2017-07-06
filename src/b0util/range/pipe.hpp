@@ -136,10 +136,10 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
             auto pos = std::cbegin(range);
             const auto blocks = size / concurrency;
             const auto remainder = size % concurrency;
-            std::vector<std::thread> threads;
+            std::vector<b0::future<void>> futures;
             results.resize(static_cast<std::size_t>(concurrency));
             auto out = results.begin();
-            threads.reserve(static_cast<std::size_t>(concurrency - 1));
+            futures.reserve(static_cast<std::size_t>(concurrency - 1));
             auto run = [&] (auto begin, auto end, std::size_t count, auto out) {
                 *out = this->apply(view(std::move(begin), std::move(end), count), run_seq);
             };
@@ -147,7 +147,7 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
                 auto begin = pos;
                 std::advance(pos, count);
                 auto end = pos;
-                threads.emplace_back(run, std::move(begin), std::move(end), count, out);
+                futures.push_back(b0::async(b0::run_par_async, run, std::move(begin), std::move(end), count, out));
                 ++out;
                 assert(size >= count);
                 size -= count;
@@ -157,8 +157,8 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
             for (std::size_t i = remainder; i < concurrency - 1; ++i)
                 push(blocks);
             run(pos, std::end(std::forward<decltype(range)>(range)), size, out);
-            for (auto &t : threads)
-                t.join();
+            for (auto &f : futures)
+                f.get();
         }
         return get<this->size() - 1>().parallel(std::move(results));
     }
@@ -171,8 +171,8 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
             auto pos = std::cbegin(range);
             const auto blocks = size / concurrency;
             const auto remainder = size % concurrency;
-            std::vector<std::thread> threads;
-            threads.reserve(static_cast<std::size_t>(concurrency - 1));
+            std::vector<b0::future<void>> futures;
+            futures.reserve(static_cast<std::size_t>(concurrency - 1));
             auto run = [&] (auto begin, auto end, std::size_t count) {
                 this->apply(view(std::move(begin), std::move(end), count), run_seq);
             };
@@ -180,7 +180,7 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
                 auto begin = pos;
                 std::advance(pos, count);
                 auto end = pos;
-                threads.emplace_back(run, std::move(begin), std::move(end), count);
+                futures.emplace_back(b0::async(b0::run_par_async, run, std::move(begin), std::move(end), count));
                 assert(size >= count);
                 size -= count;
             };
@@ -189,8 +189,8 @@ struct pipe_fn<FnTuple, true> : pipe_fn_base<pipe_fn<FnTuple, true>, FnTuple, tr
             for (std::size_t i = remainder; i < concurrency - 1; ++i)
                 push(blocks);
             run(pos, std::end(std::forward<decltype(range)>(range)), size);
-            for (auto &t : threads)
-                t.join();
+            for (auto &f : futures)
+                f.get();
         }
     }
 
