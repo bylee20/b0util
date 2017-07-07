@@ -4,7 +4,7 @@
 
 #define b0_define_symbol_tag(symname) \
 namespace s { struct __tag_ ## symname ## _t { \
-    static constexpr const char *name = #symname; \
+    static constexpr const char name[] = #symname; \
     template<class T> struct holder { \
         template<class... Args> constexpr holder(Args&&... args) \
             : symname(std::forward<Args>(args)...) { } \
@@ -52,7 +52,7 @@ struct symbol {
 
     constexpr symbol() = default;
 
-    static constexpr auto name() -> const char* { return Tag::name; }
+    static constexpr auto name() -> const auto& { return Tag::name; }
 
     template<class T>
     auto operator = (T &&t) const -> auto { return holder<std::decay_t<T>>{std::forward<T>(t)}; }

@@ -64,4 +64,6 @@ TEST_CASE("symbol") {
         REQUIRE(o1 != o2);
         REQUIRE(factory(_value).option(_name, "empty") == "value");
     }
+
+    REQUIRE(sizeof(_name_t::name()) == 5);
 }
