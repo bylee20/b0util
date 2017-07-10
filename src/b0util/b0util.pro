@@ -35,7 +35,6 @@ HEADERS +=\
     assert.hpp \
     symbol/symbol.hpp \
     symbol/object.hpp \
-    symbol/factory.hpp \
     meta/container.hpp \
     meta/callable.hpp \
     private/_future_state.hpp \
@@ -64,4 +63,5 @@ HEADERS +=\
     path.hpp \
     range/flatten.hpp \
     variadic.hpp \
-    range.hpp
+    range.hpp \
+    symbol/symbol_tag.hpp

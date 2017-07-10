@@ -1,6 +1,7 @@
 #pragma once
 
 #include "./meta/meta.hpp"
+#include "./meta/int_seq.hpp"
 #include <utility>
 
 namespace b0 {

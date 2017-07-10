@@ -1,119 +1,205 @@
 #pragma once
 
-#include "./symbol.hpp"
-#include "../meta/type_seq.hpp"
-#include "../fp.hpp"
+#include "../global.hpp"
+#include "../utility.hpp"
+#include "../meta/meta.hpp"
 
-namespace b0 {
+namespace b0 { namespace symbol {
 
-namespace symbol {
+template<class Tag> struct smbl;
+namespace detail {template <class Tag, class T, class Opts> struct holder_op;}
 
-template<class... Holders>
-struct object;
+/******************************************************************************/
 
-template<class T>
-struct symbol_seq;
+template <class Tag, class T, class Opts>
+struct holder : Tag::template holder<T> {
+  template <class V, class O>
+  holder(V &&other, O &&opts)
+      : Tag::template holder<T>{std::forward<V>(other)},
+        __symbol_holder_opts(std::forward<O>(opts)) {}
+  B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder);
 
-template<class... Holders>
-struct symbol_seq<object<Holders...>>
-    : meta::wrap_type<meta::type_seq<symbol_type_t<Holders>...>> {};
+private:
+  friend struct detail::holder_op<Tag, T, Opts>;
+  Opts __symbol_holder_opts;
+};
 
-template<class T>
-using symbol_seq_t = typename symbol_seq<T>::type;
+template <class Tag, class T>
+struct holder<Tag, T, void> : Tag::template holder<T> {
+    template <class V>
+    holder(V &&other)
+        : Tag::template holder<T>{std::forward<V>(other)}
+          {}
+    B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder);
+};
 
-template<class Holder, class Opts>
-struct holder_factory;
-
-template<class... Holders, class... _Holders>
-constexpr inline auto compare(const object<Holders...> &lhs, const object<_Holders...> &rhs)
--> meta::req_t<sizeof...(Holders) == sizeof...(_Holders), bool>;
-
-template<class... Holders, class... _Holders>
-constexpr inline auto compare(const object<Holders...> &, const object<_Holders...> &)
--> meta::req_t<sizeof...(Holders) != sizeof...(_Holders), bool> { return false; }
+/******************************************************************************/
 
 template<class... Holders>
 struct object : Holders...
 {
-    META_ASSERT(meta::is_type_seq_exclusive_v<meta::type_seq<Holders...>>);
-    META_ASSERT(meta::count_type_if_v<meta::type_seq<Holders...>, is_holder> == sizeof...(Holders));
-
-    template<class... Args>
-    constexpr object(Args&&... args): Holders(std::forward<Args>(args))... { }
-    B0_CONSTEXPR_DEFAULT_COPY_MOVE(object);
-
-    template<class T>
-    constexpr auto operator == (const T &rhs) const -> bool { return compare(*this, rhs); }
-    template<class T>
-    constexpr auto operator != (const T &rhs) const -> bool { return !(*this == rhs); }
+    template<class... Hs>
+    object(b0::in_place_t, Hs&&... holders)
+        : Holders(holders)... {}
 };
 
-template<int I, class U, class T = std::decay_t<U>,
-         class SymSeq = symbol_seq_t<T>,
-         class Sym = typename SymSeq::template get<I>>
-constexpr inline auto get(U &&t) -> decltype(auto) { return Sym::get(std::forward<U>(t)); }
+/******************************************************************************/
+
+template<class Tag, class... Holders>
+struct holder_options
+{
+    template<class... Args>
+    holder_options(b0::in_place_t, Args&&... args): m_options(b0::in_place, std::forward<Args>(args)...) {}
+
+    template<class Sym>
+    auto get(const Sym&) const -> const auto& { return get<Sym>(); }
+    template<class Sym>
+    auto get() const -> const auto& { return Sym::get(m_options); }
+    template<class Sym, class V>
+    auto get_or(const Sym&, V &&def) const -> decltype(auto) { return get_or<Sym>(std::forward<V>(def)); }
+    template<class Sym, class V>
+    auto get_or(V &&def) const -> decltype(auto) { return Sym::get_or(m_options, std::forward<V>(def)); }
+
+    template<class Sym>
+    auto exists() const -> bool { return Sym::exists(m_options); }
+    template<class Sym>
+    auto exists(const Sym&) const -> bool { return exists<Sym>(); }
+
+    template<class T>
+    auto operator = (T &&t) && -> auto
+    { return holder<Tag, std::decay_t<T>, holder_options>(std::forward<T>(t), std::move(*this)); }
+private:
+    object<Holders...> m_options;
+};
+
+/******************************************************************************/
 
 namespace detail {
 
-using namespace b0::meta;
+struct empty_t {};
 
-template<class F, class T, int... Ints>
-auto for_each_impl(int_seq<Ints...>, T &&t, const F &f) -> void
-{ b0_expand(f(b0::get<Ints>(std::forward<T>(t)))); }
+template<class T>
+struct to_holder_impl;
 
-template<int, class T, class Arg>
-auto for_each_assign_at(T &t, Arg &&arg) -> req_t<is_holder_v<std::decay_t<Arg> > >
+template<class Tag>
+struct to_holder_impl<smbl<Tag>> {
+    template<class V>
+    static auto apply(V &&symbol) -> auto { return symbol = empty_t(); }
+};
+
+template<class Tag, class T, class Opts>
+struct to_holder_impl<holder<Tag, T, Opts>> {
+    template<class V>
+    static auto apply(V &&holder) -> decltype(auto) { return std::forward<V>(holder); }
+};
+
+template<class Tag, class... Holders>
+struct to_holder_impl<holder_options<Tag, Holders...>> {
+    template<class V>
+    static auto apply(V &&options) -> auto { return std::forward<V>(options) = empty_t(); }
+};
+
+template<class T>
+inline auto to_holder(T &&t) -> decltype(auto)
 {
-    using Sym = symbol_type_t<std::decay_t<Arg>>;
-    Sym::get(t) = Sym::get(std::forward<Arg>(arg));
+    return detail::to_holder_impl<std::decay_t<T>>::apply(std::forward<T>(t));
 }
 
-template<int I, class T, class Arg>
-auto for_each_assign_at(T &t, Arg &&arg) -> req_t<!is_holder_v<std::decay_t<Arg> > >
-{ b0::symbol::get<I>(t) = std::forward<Arg>(arg); }
+template <class Tag, class T, class Opts>
+struct holder_op {
+  using holder = b0::symbol::holder<Tag, T, Opts>;
 
-template<class T, int... Ints, class... Args>
-auto for_each_assign_impl(int_seq<Ints...>, T &t, Args&&... args) -> void
-{ b0_expand(for_each_assign_at<Ints>(t, b0::get<Ints>(std::forward<Args>(args)...))); }
-
-template<class SymSeq, int I, int N, bool = (I < N && 1 > 0)>
-struct for_each_compare {
-    template<class L, class R, class Sym = typename SymSeq::template get<I>>
-    static constexpr auto apply(const L &l, const R &r) -> bool
-    { return Sym::get(l) == Sym::get(r) && for_each_compare<SymSeq, I + 1, N>::apply(l, r); }
+  template <class H> static auto options(const H &h) -> const auto & {
+    return h.__symbol_holder_opts;
+  }
 };
 
-template<class SymSeq, int I, int N>
-struct for_each_compare<SymSeq, I, N, false> {
-    template<class L, class R>
-    static constexpr auto apply(const L &, const R &) -> bool { return true; }
+template <class Tag, class T>
+struct holder_op<Tag, T, void> {
+  template <class H>
+  static auto options(const H &) -> auto { return holder_options<Tag>(b0::in_place); }
 };
 
+template <class Tag, class T, class Opts>
+inline auto options(const holder<Tag, T, Opts> &h) -> auto {
+  return detail::holder_op<Tag, T, Opts>::options(h);
+}
+
+template<class Tag, class... Holders>
+inline auto to_options(Holders &&... holders) -> auto
+{
+    return holder_options<Tag, std::decay_t<Holders>...>{b0::in_place, std::forward<Holders>(holders)...};
+}
+
+template<class... Holders>
+inline auto to_object(Holders &&... holders) -> auto
+{
+    return object<std::decay_t<Holders>...>(b0::in_place, std::forward<Holders>(holders)...);
+}
+
+template<class Tag, class H, class... Hs>
+struct find_holder
+{
+    static_assert(sizeof...(Hs) > 0, "cannot find symbol!");
+    using type = typename find_holder<Tag, Hs...>::type;
+};
+
+template<class Tag, class T, class Opts, class... Hs>
+struct find_holder<Tag, holder<Tag, T, Opts>, Hs...> {
+    using type = holder<Tag, T, Opts>;
+};
+
+}
+
+template<class Tag, class T, class Opts>
+constexpr inline auto symbol(const holder<Tag, T, Opts>&) -> b0::symbol::smbl<Tag> { return b0::symbol::smbl<Tag>(); }
+
+template <class Sym, class... Holders>
+auto options(const object<Holders...> &o, const Sym&) -> auto {
+  return detail::options(static_cast<const typename detail::find_holder<typename Sym::tag, Holders...>::type&>(o));
 }
 
 template<class... Args>
-inline auto make_object(Args&&... args) -> auto
-{ return object<std::decay_t<Args>...>{std::forward<Args>(args)...}; }
+inline auto make_object(Args&&...args) -> auto
+{
+    return detail::to_object(detail::to_holder(std::forward<Args>(args))...);
+}
 
-template<class... Holders, class... Args>
-constexpr inline auto assign(object<Holders...> &o, Args&&... args) -> void
-{ detail::for_each_assign_impl(meta::int_seq_for<Args...>(), o, std::forward<Args>(args)...); }
+template<class Tag, class... Args>
+inline auto make_options(Args&&... args) -> auto
+{
+    return detail::to_options<Tag>(detail::to_holder(std::forward<Args>(args))...);
+}
 
-template<class F, class... Holders>
-auto for_each(object<Holders...> &&t, const F &f) -> void
-{ detail::for_each_impl(meta::int_seq_for<Holders...>(), std::move(t), f); }
+template<class... Args>
+inline auto make_options(Args&&... args) -> auto
+{
+    return make_options<void>(std::forward<Args>(args)...);
+}
 
-template<class F, class... Holders>
-auto for_each(const object<Holders...> &t, F &&f) -> void
-{ detail::for_each_impl(meta::int_seq_for<Holders...>(), t, std::forward<F>(f)); }
+template<class... Holders>
+constexpr inline auto size(const object<Holders...>&) { return sizeof...(Holders); }
 
-template<class F, class... Holders>
-auto for_each(object<Holders...> &t, F &&f) -> void
-{ detail::for_each_impl(meta::int_seq_for<Holders...>(), t, std::forward<F>(f)); }
+template<class Fn>
+inline auto for_each(const object<> &, Fn &&) -> void {}
 
-template<class... Holders, class... _Holders>
-constexpr inline auto compare(const object<Holders...> &lhs, const object<_Holders...> &rhs)
--> meta::req_t<sizeof...(Holders) == sizeof...(_Holders), bool>
-{ return detail::for_each_compare<symbol_seq_t<object<Holders...>>, 0, sizeof...(Holders)>::apply(lhs, rhs); }
+template<class... Holders, class Fn>
+inline auto for_each(const object<Holders...> &o, Fn &&fn) -> void
+{
+    b0_expand(std::forward<Fn>(fn)(static_cast<const Holders&>(o)));
+}
 
-}}
+template<class... Holders, class Fn>
+inline auto for_each(object<Holders...> &o, Fn &&fn) -> void
+{
+    b0_expand(std::forward<Fn>(fn)(static_cast<Holders&>(o)));
+}
+
+template<class... Holders, class Fn>
+inline auto for_each(object<Holders...> &&o, Fn &&fn) -> void
+{
+    b0_expand(std::forward<Fn>(fn)(static_cast<Holders&&>(o)));
+}
+
+}
+}

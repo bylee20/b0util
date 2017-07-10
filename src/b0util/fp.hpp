@@ -74,6 +74,34 @@ template<class... Args, class F>
 constexpr inline auto for_each_if(Args&&... args, const F &f)
 B0_RETURN_BODY(detail::for_each_if_impl(std::forward<Args>(args)..., f))
 
+namespace detail {
+
+template<class T, class Fn, int... Is>
+inline auto for_each_impl(T &&tuple, Fn &&fn, b0::meta::int_seq<Is...>) -> void
+{
+    b0_expand(std::forward<Fn>(fn)(std::get<Is>(std::forward<T>(tuple))));
+}
+
+}
+
+template<class... Args, class Fn>
+inline auto for_each(const std::tuple<Args...> &tuple, Fn &&fn) -> void
+{
+    detail::for_each_impl(tuple, std::forward<Fn>(fn), b0::meta::int_seq_for<Args...>());
+}
+
+template<class... Args, class Fn>
+inline auto for_each(std::tuple<Args...> &tuple, Fn &&fn) -> void
+{
+    detail::for_each_impl(tuple, std::forward<Fn>(fn), b0::meta::int_seq_for<Args...>());
+}
+
+template<class... Args, class Fn>
+inline auto for_each(std::tuple<Args...> &&tuple, Fn &&fn) -> void
+{
+    detail::for_each_impl(std::move(tuple), std::forward<Fn>(fn), b0::meta::int_seq_for<Args...>());
+}
+
 }
 
 #ifdef B0_CC_MSVC

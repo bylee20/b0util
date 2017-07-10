@@ -42,4 +42,10 @@ TEST_CASE("fp") {
 //    META_ASSERT(!is_invokable_overflow_v<decltype(lambda), int>);
 
     META_ASSERT(b0::meta::eq_v<void, b0::meta::invoke<decltype(vlambda)>::type>);
+
+
+    auto tuple = std::make_tuple(1, 2, 3.0);
+    int val = 0;
+    b0::for_each(tuple, [&] (auto v) { val += v; });
+    REQUIRE(val == 6);
 }

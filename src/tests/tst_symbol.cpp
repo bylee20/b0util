@@ -1,7 +1,6 @@
 #include <catch/catch.hpp>
 #include <b0util/symbol/symbol.hpp>
 #include <b0util/symbol/object.hpp>
-#include <b0util/symbol/factory.hpp>
 
 b0_define_symbol(name)
 b0_define_symbol(value)
@@ -10,6 +9,8 @@ b0_define_symbol(unknown);
 
 TEST_CASE("symbol") {
     using namespace s;
+
+    REQUIRE(sizeof(_name_t::name()) == 5);
 
     struct {
         std::string name = "test";
@@ -43,27 +44,26 @@ TEST_CASE("symbol") {
     REQUIRE(_value.try_compare(obj, obj2) == false);
     REQUIRE(obj.name == "test2");
 
+
     SECTION("object") {
         auto object = b0::symbol::make_object(_name = std::string("object-name"), _value = 100, _toggle = true);
         REQUIRE(_name.get_or(object, "empty") == std::string("object-name"));
         REQUIRE(_unknown.get_or(object, std::string("empty")) == std::string("empty"));
         REQUIRE(object.value == 100);
         REQUIRE(object.name == "object-name");
-        b0::symbol::assign(object, _toggle = false, 200, _name = std::string("another-name"));
-        REQUIRE(object.value == 200);
-        REQUIRE(object.name == "another-name");
-        REQUIRE(object.toggle == false);
     }
-    SECTION("factory") {
-        auto factory = b0::symbol::make_factory(_value(_name = std::string("value")) = -1);
-        auto o1 = factory(), o2 = factory();
+    SECTION("options") {
+        auto o1 = b0::symbol::make_object(_value(_name = std::string("value")) = -1);
         REQUIRE(o1.value == -1);
-        REQUIRE(o2.value == -1);
-        REQUIRE(o1 == o2);
-        o2.value = 1;
-        REQUIRE(o1 != o2);
-        REQUIRE(factory(_value).option(_name, "empty") == "value");
+        REQUIRE(options(o1, _value).get(_name) == "value");
+        REQUIRE(options(o1, _value).get_or(_name, std::string("trap")) == "value");
+        REQUIRE(options(o1, _value).get_or(_toggle, true) == true);
+//        REQUIRE(o2.value == -1);
+//        REQUIRE(o1 == o2);
+//        o2.value = 1;
+//        REQUIRE(o1 != o2);
+//        REQUIRE(factory(_value).option(_name, "empty") == "value");
     }
 
-    REQUIRE(sizeof(_name_t::name()) == 5);
+
 }
