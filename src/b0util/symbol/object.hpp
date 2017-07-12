@@ -6,41 +6,63 @@
 
 namespace b0 { namespace symbol {
 
+struct empty_t {};
+
 template<class Tag> struct smbl;
-namespace detail {template <class Tag, class T, class Opts> struct holder_op;}
+namespace detail {template <class Tag, class T, class Opts> struct options_impl;}
 
 /******************************************************************************/
 
 template <class Tag, class T, class Opts>
 struct holder : Tag::template holder<T> {
-  template <class V, class O>
-  holder(V &&other, O &&opts)
-      : Tag::template holder<T>{std::forward<V>(other)},
-        __symbol_holder_opts(std::forward<O>(opts)) {}
-  B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder);
+    constexpr holder(): Tag::template holder<T>{} {}
+    template <class V, class O>
+    holder(V &&other, O &&opts)
+        : Tag::template holder<T>{std::forward<V>(other)},
+          __symbol_holder_opts(std::forward<O>(opts)) {}
+    B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder);
 
 private:
-  friend struct detail::holder_op<Tag, T, Opts>;
+  friend struct detail::options_impl<Tag, T, Opts>;
   Opts __symbol_holder_opts;
 };
 
 template <class Tag, class T>
 struct holder<Tag, T, void> : Tag::template holder<T> {
+    constexpr holder(): Tag::template holder<T>{} {}
     template <class V>
-    holder(V &&other)
-        : Tag::template holder<T>{std::forward<V>(other)}
-          {}
+    constexpr holder(V &&other)
+        : Tag::template holder<T>{std::forward<V>(other)} {}
     B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder);
 };
+
+template<class H>
+struct holding_type {};
+
+template<class Tag, class T, class Opts>
+struct holding_type<holder<Tag, T, Opts>> {
+    using type = T;
+};
+
+template<class H>
+using holding_type_t = typename holding_type<H>::type;
+
+template<class H>
+using is_empty = b0::meta::bool_<b0::meta::eq_v<holding_type_t<H>, empty_t>>;
+
+template<class H>
+static constexpr bool is_empty_v = is_empty<H>::value;
 
 /******************************************************************************/
 
 template<class... Holders>
 struct object : Holders...
 {
+    constexpr object(): Holders{}... {}
     template<class... Hs>
-    object(b0::in_place_t, Hs&&... holders)
+    constexpr object(b0::in_place_t, Hs&&... holders)
         : Holders(holders)... {}
+    B0_CONSTEXPR_DEFAULT_COPY_MOVE(object);
 };
 
 /******************************************************************************/
@@ -49,7 +71,8 @@ template<class Tag, class... Holders>
 struct holder_options
 {
     template<class... Args>
-    holder_options(b0::in_place_t, Args&&... args): m_options(b0::in_place, std::forward<Args>(args)...) {}
+    constexpr holder_options(b0::in_place_t, Args&&... args): m_options(b0::in_place, std::forward<Args>(args)...) {}
+    B0_CONSTEXPR_DEFAULT_COPY_MOVE(holder_options);
 
     template<class Sym>
     auto get(const Sym&) const -> const auto& { return get<Sym>(); }
@@ -75,8 +98,6 @@ private:
 /******************************************************************************/
 
 namespace detail {
-
-struct empty_t {};
 
 template<class T>
 struct to_holder_impl;
@@ -106,23 +127,23 @@ inline auto to_holder(T &&t) -> decltype(auto)
 }
 
 template <class Tag, class T, class Opts>
-struct holder_op {
+struct options_impl {
   using holder = b0::symbol::holder<Tag, T, Opts>;
 
-  template <class H> static auto options(const H &h) -> const auto & {
+  template <class H> static auto apply(const H &h) -> const auto & {
     return h.__symbol_holder_opts;
   }
 };
 
 template <class Tag, class T>
-struct holder_op<Tag, T, void> {
+struct options_impl<Tag, T, void> {
   template <class H>
-  static auto options(const H &) -> auto { return holder_options<Tag>(b0::in_place); }
+  static auto apply(const H &) -> auto { return holder_options<Tag>(b0::in_place); }
 };
 
 template <class Tag, class T, class Opts>
 inline auto options(const holder<Tag, T, Opts> &h) -> auto {
-  return detail::holder_op<Tag, T, Opts>::options(h);
+  return detail::options_impl<Tag, T, Opts>::apply(h);
 }
 
 template<class Tag, class... Holders>
@@ -151,11 +172,27 @@ struct find_holder<Tag, holder<Tag, T, Opts>, Hs...> {
 
 }
 
+template<class T>
+struct strip_options;
+
+template<class Tag, class T, class Opts>
+struct strip_options<holder<Tag, T, Opts>> {
+    using type = holder<Tag, T, void>;
+};
+
+template<class... Hs>
+struct strip_options<object<Hs...>> {
+    using type = object<typename strip_options<Hs>::type...>;
+};
+
+template<class T>
+using strip_options_t = typename strip_options<T>::type;
+
 template<class Tag, class T, class Opts>
 constexpr inline auto symbol(const holder<Tag, T, Opts>&) -> b0::symbol::smbl<Tag> { return b0::symbol::smbl<Tag>(); }
 
 template <class Sym, class... Holders>
-auto options(const object<Holders...> &o, const Sym&) -> auto {
+inline auto options(const object<Holders...> &o, const Sym&) -> auto {
   return detail::options(static_cast<const typename detail::find_holder<typename Sym::tag, Holders...>::type&>(o));
 }
 
@@ -200,6 +237,56 @@ inline auto for_each(object<Holders...> &&o, Fn &&fn) -> void
 {
     b0_expand(std::forward<Fn>(fn)(static_cast<Holders&&>(o)));
 }
+
+
+
+template<class H, class... Hs>
+struct for_each_while_impl2 {
+    template<class T, class Fn>
+    static constexpr auto apply(T &&o, Fn &&fn) -> bool
+    {
+        return std::forward<Fn>(fn)(static_cast<H>(o)) && for_each_while_impl2<Hs...>::apply(std::forward<T>(o), std::forward<Fn>(fn));
+    }
+};
+
+template<class H>
+struct for_each_while_impl2<H> {
+    template<class T, class Fn>
+    static constexpr auto apply(T &&o, Fn &&fn) -> bool
+    {
+        return std::forward<Fn>(fn)(static_cast<H>(o));
+    }
+};
+
+template<class... Hs>
+struct for_each_while_impl {
+    template<class T, class Fn>
+    static constexpr auto apply(T &&o, Fn &&fn) -> bool
+    {
+        using namespace b0::meta;
+        return for_each_while_impl2<rref_t<const_t<Hs, is_const_v<T&&>>&, is_rref_v<T&&>>...>::apply(std::forward<T>(o), std::forward<Fn>(fn));
+    }
+
+};
+
+template<class Fn, class... Hs>
+inline auto for_each_while(const object<Hs...> &scheme, Fn &&fn) -> bool
+{
+    return for_each_while_impl<Hs...>::apply(scheme, std::forward<Fn>(fn));
+}
+
+template<class Fn, class... Hs>
+inline auto for_each_while(object<Hs...> &scheme, Fn &&fn) -> bool
+{
+    return for_each_while_impl<Hs...>::apply(scheme, std::forward<Fn>(fn));
+}
+
+template<class Fn, class... Hs>
+inline auto for_each_while(object<Hs...> &&scheme, Fn &&fn) -> bool
+{
+    return for_each_while_impl<Hs...>::apply(std::move(scheme), std::forward<Fn>(fn));
+}
+
 
 }
 }

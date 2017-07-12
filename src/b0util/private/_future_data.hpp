@@ -176,7 +176,7 @@ protected:
     template<future_state NewState, class SetData>
     auto _settle(SetData &&setData) -> void
     {
-        if (check_settled())
+        if (this->check_settled())
             return;
         {
             auto locker = this->lock();

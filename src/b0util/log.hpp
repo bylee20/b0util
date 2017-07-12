@@ -61,7 +61,7 @@ private:
     friend class logger_context;
     static auto make_combined(std::initializer_list<spdlog::sink_ptr> loggers) -> logger;
     logger() {}
-    logger(std::shared_ptr<spdlog::logger> log);
+    logger(std::shared_ptr<spdlog::logger> log): m_log(std::move(log)) { }
     std::shared_ptr<spdlog::logger> m_log;
 };
 

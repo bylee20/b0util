@@ -20,10 +20,6 @@ static inline auto get_logger_name() -> std::string
     return name += std::to_string(s_number.load());
 }
 
-logger::logger(std::shared_ptr<spdlog::logger> log)
-    : m_log(std::move(log))
-{ }
-
 auto logger::console(console_sink sink, bool color) -> logger
 {
     return sink == stdout_sink ? stdout_(color) : stderr_(color);

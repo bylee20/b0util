@@ -64,6 +64,14 @@ TEST_CASE("symbol") {
 //        REQUIRE(o1 != o2);
 //        REQUIRE(factory(_value).option(_name, "empty") == "value");
     }
-
+    SECTION("for_each") {
+        int times = 0;
+        const auto o = b0::symbol::make_object(_name = true, _value = false, _toggle = false);
+        for_each_while(o, [&] (auto &&i) {
+            times++;
+            return symbol(i).get(i);
+        });
+        REQUIRE(times == 2);
+    }
 
 }

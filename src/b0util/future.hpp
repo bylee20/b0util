@@ -236,7 +236,7 @@ public:
             b0::invoke(std::forward<F>(func), std::forward<Args>(args)...);
             resolve();
         } catch (...) {
-            reject(std::current_exception());
+            this->reject(std::current_exception());
         }
     }
     template<class F, class Tuple>
@@ -246,7 +246,7 @@ public:
             b0::apply(std::forward<F>(func), std::forward<Tuple>(tuple));
             resolve();
         } catch (...) {
-            reject(std::current_exception());
+            this->reject(std::current_exception());
         }
     }
 };

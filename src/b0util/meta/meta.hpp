@@ -79,6 +79,12 @@ template <class T>
 using uncref_t = unconst_t<unref_t<T>>;
 
 template<class T>
+using is_const = std::is_const<unref_t<T>>;
+
+template<class T>
+constexpr bool is_const_v = is_const<T>::value;
+
+template<class T>
 using is_rref = std::is_rvalue_reference<T>;
 
 template<class T>
@@ -104,6 +110,11 @@ struct is_ref_wrapper<std::reference_wrapper<U>> : true_ {};
 template <class T>
 constexpr bool is_ref_wrapper_v = is_ref_wrapper<T>::value;
 
+template<class T, bool add = true>
+using const_t = if_t<add, const T, T>;
+
+template<class T, bool add = true>
+using rref_t = if_t<add, T&&, T>;
 
 template<class T, class S>
 using eq = std::is_same<T, S>;
