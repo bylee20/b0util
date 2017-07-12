@@ -9,7 +9,9 @@ class B0UtilConan(ConanFile):
     generators = "qmake"
     build_policy = "missing"
     exports_sources = "*.pro", "src/*"
-    
+    description = "utils"
+    short_paths = True
+
     def requirements(self):
         self.requires("catch/latest@xylosper/stable")
         self.requires("spdlog/latest@xylosper/stable")
