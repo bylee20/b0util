@@ -13,9 +13,9 @@ class B0UtilConan(ConanFile):
     short_paths = True
 
     def requirements(self):
-        self.requires("catch/latest@xylosper/stable")
-        self.requires("spdlog/latest@xylosper/stable")
-        self.requires("fmt/latest@xylosper/stable")
+        self.requires("catch/[>=1.10]@xylosper/stable")
+        self.requires("spdlog/[>=0.14]@xylosper/stable")
+        self.requires("fmt/[>=4.0]@xylosper/stable")
 
     #def imports(self):
         #self.copy("*.dll", dst="bin", src="bin") # From bin to bin
