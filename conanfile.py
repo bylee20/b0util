@@ -10,7 +10,6 @@ class B0UtilConan(ConanFile):
     build_policy = "missing"
     exports_sources = "*.pro", "src/*"
     description = "utils"
-    short_paths = True
 
     def requirements(self):
         self.requires("catch/[>=1.10]@xylosper/stable")
@@ -32,13 +31,6 @@ class B0UtilConan(ConanFile):
             if self.settings.os == "Windows":
                 self.run_msvc("jom qmake_all")
                 self.run_msvc("jom -j%d" % tools.cpu_count())
-        #cmake = CMake(self.settings)
-        #flags = "-DBUILD_SHARED_LIBS=TRUE -DFMT_TEST=FALSE -DFMT_INSTALL=TRUE -DFMT_DOCS=FALSE"
-        #flags += " -DCMAKE_INSTALL_PREFIX=\"%s\"" % self.package_folder
-        #if self.settings.os != "Windows":
-            #flags += " -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE"
-        #self.run("cmake %s/%s-%s %s %s" % (self.conanfile_directory, self.name, self.version, cmake.command_line, flags))
-        #self.run("cmake --build . --target install %s" % cmake.build_config)
 
     def package(self):
         bt = str(self.settings.build_type).lower()

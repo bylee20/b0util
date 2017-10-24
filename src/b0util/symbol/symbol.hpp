@@ -52,9 +52,9 @@ struct smbl {
     static constexpr auto equals(T&&) -> bool { return false; }
 
     template<class T>
-    static constexpr auto exists() -> bool { return exists_v<T>; }
+    static constexpr auto exists() -> bool { return Tag::template has_symbol<std::decay_t<T> >::value; }
     template<class T>
-    static constexpr auto exists(T &&) -> bool { return exists_v<T>; }
+    static constexpr auto exists(T &&) -> bool { return exists<std::decay_t<T> >(); }
 
     template<class T, class V>
     using req_match_t = b0::meta::req_t<can_match_v<T, V>, bool>;
